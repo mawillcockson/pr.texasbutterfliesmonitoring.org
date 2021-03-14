@@ -1,0 +1,4 @@
+baseURL = "https://texasbutterfliesmonitoring.org/"
+languageCode = "en-us"
+title = "Texas Butterfly Monitoring Network"
+disableKinds = ["taxonomy", "term"]
