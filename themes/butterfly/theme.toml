@@ -8,14 +8,8 @@ description = "Simple theme for TBMN"
 homepage = "https://github.com/mawillcockson/TXButterflies.github.io/tree/main/themes/butterfly/"
 tags = []
 features = []
-min_version = "0.41"
+min_version = "0.80"
 
 [author]
-  name = ""
-  homepage = ""
-
-# If porting an existing theme
-[original]
-  name = ""
-  homepage = ""
-  repo = ""
+  name = "Matthew Willcockson"
+  homepage = "https://github.com/mawillcockson"
