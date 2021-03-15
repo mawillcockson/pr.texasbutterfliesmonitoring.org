@@ -156,3 +156,17 @@ button {
     vertical-align: middle;
     text-align: center;
 }
+
+.logo {
+    width: 100%;
+}
+
+.logo > img {
+    width: 40%;
+}
+
+@media screen and (max-width: 30em) {
+    .logo > img {
+        width: 100%;
+    }
+}

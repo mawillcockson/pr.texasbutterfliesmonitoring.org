@@ -3,7 +3,7 @@
 # shortcode beginning the file
 +++
 
-{{< image alt="The Texas Butterfly Monitoring Network Logo" src="/logo_text.png" >}}
+{{< image alt="The Texas Butterfly Monitoring Network Logo" src="/logo_text.png" class="logo" >}}
 
 ## Interested in Monitoring Texas Butterflies?
 
