@@ -1,0 +1,2 @@
+{{ $currentPage := .currentPage }}
+{{ with site.GetPage .refName }}<a href="{{ relref $currentPage .File.Path }}">{{ .LinkTitle }}</a>{{ end }}
