@@ -18,10 +18,10 @@
   </head>
 
   <body>
-    {{ block "header" . }}{{ partial "header.html" .}}{{ end }}
+    <header>{{ block "header" . }}{{ partial "header.html" .}}{{ end }}</header>
     <main role="main">
       {{ block "main" . }}{{ end }}
     </main>
-    {{ block "footer" . }}{{ partial "footer.html" . }}{{ end }}
+    <footer>{{ block "footer" . }}{{ partial "footer.html" . }}{{ end }}</footer>
   </body>
 </html>

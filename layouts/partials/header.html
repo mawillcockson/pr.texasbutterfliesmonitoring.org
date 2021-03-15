@@ -1,11 +1,9 @@
-<header>
-    <nav>
-        <ul>
-            <li><a {{ if .IsHome }}class="active"{{ end }} href="{{ if .IsHome }}{{ safeURL `#` }}{{ else }}{{ .Site.Home.RelPermalink }}{{ end }}">Home</a></li>
-            {{ $currentPage := . }}
-            {{ range .Site.RegularPages }}
-            <li><a {{ if $currentPage | eq . }}class="active"{{ end }} href="{{ if $currentPage | eq . }}{{ safeURL `#` }}{{ else }}{{ .RelPermalink }}{{ end }}">{{- .LinkTitle -}}</a></li>
-            {{ end }}
-        </ul>
-    </nav>
-</header>
+<nav>
+    <ul>
+        <li><a {{ if .IsHome }}class="active"{{ end }} href="{{ if .IsHome }}{{ safeURL `#` }}{{ else }}{{ .Site.Home.RelPermalink }}{{ end }}">Home</a></li>
+        {{ $currentPage := . }}
+        {{ range .Site.RegularPages }}
+        <li><a {{ if $currentPage | eq . }}class="active"{{ end }} href="{{ if $currentPage | eq . }}{{ safeURL `#` }}{{ else }}{{ .RelPermalink }}{{ end }}">{{- .LinkTitle -}}</a></li>
+        {{ end }}
+    </ul>
+</nav>
