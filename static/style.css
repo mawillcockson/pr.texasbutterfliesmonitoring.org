@@ -28,12 +28,16 @@ nav > ul {
 }
 
 nav > ul > li {
-    padding: 1em 1em;
     margin: 0;
+    padding: 0;
     border-right: inset 0.1em var(--nav-separator-color);
     display: flex;
     align-items: center;
     text-align: center;
+}
+
+nav a {
+    padding: 1em 1em;
 }
 
 header, footer {
@@ -90,6 +94,11 @@ footer {
         border: 0 black;
         border-bottom: inset 0.1em var(--nav-separator-color);
         width: 100%;
+    }
+
+    nav a {
+        width: 100%;
+        text-align: left;
     }
 
     nav > ul > li:last-child {
