@@ -29,7 +29,25 @@ nav > ul > li {
     padding: 1em 1em;
     margin: 0;
     border-right: inset 0.1em var(--nav-separator-color);
+    display: flex;
+    align-items: center;
     text-align: center;
+}
+
+@media screen and (max-width: 30em) {
+    nav > ul {
+        flex-direction: column;
+    }
+
+    nav > ul > li {
+        border: 0 black;
+        border-bottom: inset 0.1em var(--nav-separator-color);
+        width: 100%;
+    }
+
+    nav > ul > li:last-child {
+        border: 0 black;
+    }
 }
 
 nav a {
