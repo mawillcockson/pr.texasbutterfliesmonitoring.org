@@ -3,6 +3,7 @@
     --main-color: white;
     --nav-text-color: lightgrey;
     --nav-separator-color: lightgrey;
+    --banner-font-size: 0.8em;
 }
 
 html, body {
@@ -14,7 +15,7 @@ html, body {
 body {
     height: 100vh;
     display: flex;
-    flex-direction: column;
+    flex-flow: column nowrap;
 }
 
 nav > ul {
@@ -34,9 +35,53 @@ nav > ul > li {
     text-align: center;
 }
 
+header, footer {
+    font-size: var(--banner-font-size);
+}
+
+header,
+header a,
+footer,
+footer a {
+    /* Because of sanitize.css included in the baseof.html template, the text
+     * color has to be explicitly set on the a tags
+     */
+    color: var(--nav-text-color);
+}
+
+header a {
+    text-decoration: none;
+}
+
+footer a {
+    text-decoration: underline dotted;
+    padding: 0.4em;
+}
+
+footer {
+    display: flex;
+}
+
+.left-footer, .right-footer {
+    flex: 1 1 auto;
+}
+
+.left-footer {
+    display: flex;
+    flex-flow: row wrap;
+}
+
+.right-footer {
+    padding: 0.4em;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    text-align: right;
+}
+
 @media screen and (max-width: 30em) {
     nav > ul {
-        flex-direction: column;
+        flex-flow: column nowrap;
     }
 
     nav > ul > li {
@@ -48,11 +93,19 @@ nav > ul > li {
     nav > ul > li:last-child {
         border: 0 black;
     }
-}
 
-nav a {
-    color: var(--nav-text-color);
-    text-decoration: none;
+    footer {
+        flex-flow: column wrap;
+    }
+
+    .left-footer {
+        justify-content: center;
+    }
+
+    .right-footer {
+        padding-top: 0;
+        justify-content: center;
+    }
 }
 
 main {
