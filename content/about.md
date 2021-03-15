@@ -3,6 +3,8 @@ title = "About the Texas Butterfly Monitoring Network"
 linktitle = "About"
 +++
 
+{{< image alt="Fiery Skipper" src="/Fiery Skipper.jpg" side="left" >}}
+
 The Texas Butterfly Monitoring Network is a Citizen Science Project started in
 2018 in cooperation with the greater
 [North American Butterfly Monitoring Network][]. Participants walk the same
@@ -12,8 +14,6 @@ occurring where throughout the Lone Star State. Texas has more butterflies than
 any other state in the United States, so long-term monitoring is crucial to
 understanding butterfly movement and assessing the health of butterfly
 habitats.
-
-{{< image alt="Fiery Skipper" src="/Fiery Skipper.jpg" >}}
 
 The Texas Butterfly Monitoring Network is designed for both seasoned observers
 of butterflies and newly interested people just starting butterfly
