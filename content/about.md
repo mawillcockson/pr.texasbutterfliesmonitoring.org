@@ -1,5 +1,6 @@
 +++
 title = "About the Texas Butterfly Monitoring Network"
+linktitle = "About"
 +++
 
 The Texas Butterfly Monitoring Network is a Citizen Science Project started in
@@ -12,7 +13,7 @@ any other state in the United States, so long-term monitoring is crucial to
 understanding butterfly movement and assessing the health of butterfly
 habitats.
 
-![Fiery Skipper](/Fiery Skipper.jpg)
+{{< image "Fiery Skipper" "/Fiery Skipper.jpg" >}}
 
 The Texas Butterfly Monitoring Network is designed for both seasoned observers
 of butterflies and newly interested people just starting butterfly

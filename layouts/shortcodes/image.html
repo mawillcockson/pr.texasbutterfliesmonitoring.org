@@ -1,0 +1,14 @@
+{{/* Should use Hugo Pipes for resizing the image */}}
+{{- if .IsNamedParams -}}
+{{ $url := .Get "src" | safeURL }}
+<picture>{{ chomp "\n" -}}
+    <source srcset="{{ $url }}">{{ chomp "\n" -}}
+    <img src="{{ $url }}" alt="{{ .Get "title" | or (.Get "alt") }}">{{ chomp "\n" -}}
+</picture>
+{{- else -}}
+{{ $url := .Get 1 | safeURL }}
+<picture>{{ chomp "\n" -}}
+    <source srcset="{{ $url }}">{{ chomp "\n" -}}
+    <img src="{{ $url }}" alt="{{ .Get 0 }}">{{ chomp "\n" -}}
+</picture>
+{{- end -}}

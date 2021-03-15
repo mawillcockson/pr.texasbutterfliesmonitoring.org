@@ -1,6 +1,5 @@
----
-title: "{{ replace .Name "-" " " | title }}"
-date: {{ .Date }}
-draft: true
----
++++
+title = "The Title of The Page Here"
+linktitle = "{{ replace .Name "-" " " | title }}"
++++
 
