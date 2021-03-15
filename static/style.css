@@ -156,9 +156,3 @@ button {
     vertical-align: middle;
     text-align: center;
 }
-
-@media screen and (max-width: 30em) {
-    .button {
-        align-self: center;
-    }
-}
