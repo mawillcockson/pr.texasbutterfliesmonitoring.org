@@ -1,12 +1,40 @@
+:root {
+    --banner-color: rgb(51, 51, 51);
+    --main-color: white;
+    --nav-text-color: lightgrey;
+    --nav-separator-color: lightgrey;
+}
+
 html, body {
     margin: 0;
     padding: 0;
+    font-family: sans-serif;
 }
 
 body {
     height: 100vh;
     display: flex;
     flex-direction: column;
+}
+
+nav > ul {
+    margin: 0;
+    padding: 0;
+    display: flex;
+    align-items: flex-start;
+    background-color: var(--banner-color);
+}
+
+nav > ul > li {
+    padding: 1em 1em;
+    margin: 0;
+    border-right: inset 0.1em var(--nav-separator-color);
+    text-align: center;
+}
+
+nav a {
+    color: var(--nav-text-color);
+    text-decoration: none;
 }
 
 main {
@@ -32,4 +60,8 @@ picture > img {
     max-width: 100%;
     height: auto;
     max-height: 100%;
+}
+
+footer {
+    background-color: var(--banner-color);
 }
