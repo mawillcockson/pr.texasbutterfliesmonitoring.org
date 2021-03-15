@@ -13,7 +13,7 @@ any other state in the United States, so long-term monitoring is crucial to
 understanding butterfly movement and assessing the health of butterfly
 habitats.
 
-{{< image "Fiery Skipper" "/Fiery Skipper.jpg" >}}
+{{< image alt="Fiery Skipper" src="/Fiery Skipper.jpg" >}}
 
 The Texas Butterfly Monitoring Network is designed for both seasoned observers
 of butterflies and newly interested people just starting butterfly

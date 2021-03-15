@@ -1,14 +1,18 @@
 {{/* Should use Hugo Pipes for resizing the image */}}
+{{- $e := "" -}}
 {{- if .IsNamedParams -}}
-{{ $url := .Get "src" | safeURL }}
-<picture>{{ chomp "\n" -}}
-    <source srcset="{{ $url }}">{{ chomp "\n" -}}
-    <img src="{{ $url }}" alt="{{ .Get "title" | or (.Get "alt") }}">{{ chomp "\n" -}}
-</picture>
+  {{- .Scratch.Set "alt" (.Params.alt | or .Params.title | or .Params.text) -}}
+  {{- .Scratch.Set "src" (.Params.src | or .Params.file | or .Params.path) -}}
+  {{- .Scratch.Set "class" (.Params.side | or .Params.class | or .Params.classes) -}}
 {{- else -}}
-{{ $url := .Get 1 | safeURL }}
-<picture>{{ chomp "\n" -}}
-    <source srcset="{{ $url }}">{{ chomp "\n" -}}
-    <img src="{{ $url }}" alt="{{ .Get 0 }}">{{ chomp "\n" -}}
-</picture>
+  {{- .Scratch.Set "alt" (.Get 0) -}}
+  {{- .Scratch.Set "src" (.Get 1) -}}
+  {{- .Scratch.Set "class" (.Get 2) -}}
 {{- end -}}
+{{- $alt := .Scratch.Get "alt" | or "" -}}
+{{- $src := .Scratch.Get "src" | safeURL -}}
+{{- $class := .Scratch.Get "class" | or "" -}}
+<picture {{ with $class }}class="{{ . }}"{{ end }}>{{- $e -}}
+    <source srcset="{{- $src -}}">{{- $e -}}
+    <img src="{{- $src -}}" alt="{{- $alt -}}">{{- $e -}}
+</picture>
