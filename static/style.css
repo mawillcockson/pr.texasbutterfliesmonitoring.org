@@ -162,7 +162,7 @@ button {
 }
 
 .logo > img {
-    width: 40%;
+    max-width: 40%;
 }
 
 @media screen and (max-width: 30em) {
