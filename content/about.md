@@ -17,8 +17,8 @@ habitats.
 
 The Texas Butterfly Monitoring Network is designed for both seasoned observers
 of butterflies and newly interested people just starting butterfly
-observations! If you are interested, please sign up under the
-[Volunteer tab]({{< relref "volunteer" >}}). Under the
+observations! If you are interested, please sign up by clicking the button on
+[the home page](</>). Under the
 [Resources tab]({{< relref "resources" >}}), members can find basic information
 on the program as well as field guides and books to learn their butterflies,
 and butterfly watchers of any level are encouraged to try. Monitoring routes
