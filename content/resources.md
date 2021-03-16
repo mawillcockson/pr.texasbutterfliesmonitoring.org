@@ -13,6 +13,12 @@ linktitle = "Resources"
 - {{< resource "Route Information" "/Route Information.pdf" >}}
 - {{< resource "Using PollardBase" "/Using PollardBase.pdf" >}}
 
+## Live Q&A Sessions
+
+- Thur, Mar 18th 12 noon to 12:30 pm CDT  
+<https://us04web.zoom.us/j/75029915171?pwd=aWxvNzh3VFcxRkx3dkpocWNOY1lNQT09>  
+Meeting ID: 750 2991 5171
+
 ## Identification Resources
 
 - {{< resource "NABA Regional Butterfly Garden Guides" "http://nababutterfly.com/regional-butterfly-garden-guides/" >}}
