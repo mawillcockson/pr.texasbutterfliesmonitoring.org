@@ -1,0 +1,8 @@
+{{- $url := .Inner | or (.Get 1) | safeURL -}}
+{{- if not (findRE `^http?s://` $url) -}}
+{{- errorf `button needs a link. Use one of these formats:
+{{< button "%s" "https://example.com" />}}
+{{< button "%s" >}}{{< relref "another_page" >}}{{< /button >}}
+Error at: %s` (.Get 0) (.Get 0) .Position -}}
+{{- end -}}
+<a href="{{ $url }}" class="button" target="_blank"><button type="button">{{ .Get 0 }}</button></a>

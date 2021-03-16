@@ -1,0 +1,4 @@
+# This configuration is used when running:
+# hugo server
+verbose = true
+verboseLog = true

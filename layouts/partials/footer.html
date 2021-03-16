@@ -1,0 +1,7 @@
+<div class="left-footer">
+    {{- partial "pageLink.html" (dict "currentPage" . "refName" "about") -}}
+    {{- partial "pageLink.html" (dict "currentPage" . "refName" "contact") -}}
+</div>
+{{ with site.Copyright }}
+    <div class="right-footer">{{ html . }}</div>
+{{ end }}
