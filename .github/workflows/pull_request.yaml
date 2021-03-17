@@ -99,7 +99,7 @@ jobs:
           git fetch origin "refs/pull/${PULL_REQUEST_ID}/head"
           git checkout FETCH_HEAD
           cd "${GITHUB_WORKSPACE}"
-          sudo apt install -y snap jq
+          sudo apt install -y snap
           sudo snap install hugo --channel=extended
           mkdir -p "${GITHUB_WORKSPACE}/gh-pages/${PULL_REQUEST_ID}/"
           /snap/bin/hugo \
