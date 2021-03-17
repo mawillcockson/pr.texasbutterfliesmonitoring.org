@@ -30,7 +30,7 @@ jobs:
   dispatch:
     name: Dispatch to other repository
     runs-on: ubuntu-latest
-    if: "${{ github.event_name == 'pull_request' }}"
+    if: "${{ github.event_name == 'pull_request_target' }}"
     steps:
       - name: Run script to trigger GitHub Action workflow in other repository
         shell: bash
