@@ -25,14 +25,23 @@ jobs:
 
       - name: Set github-actions as the git user, install hugo, build website, publish to gh-pages
         shell: bash
+        env:
+          HUGO_ENVIRONMENT: "production"
+          ACTIONS_USERNAME: "github-actions"
+          ACTIONS_EMAIL: "41898282+github-actions[bot]@users.noreply.github.com"
         run: |
-          git config --global user.name "github-actions"
-          git config --global user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git config --global user.name "${ACTIONS_USERNAME}"
+          git config --global user.email "${ACTIONS_EMAIL}"
           sudo apt install -y snap
+          sudo snap install core || sudo snap refresh core
           sudo snap install hugo --channel=extended
-          cd gh-pages/
+          cd "${GITHUB_WORKSPACE}/gh-pages/"
           git rm -rf :/
-          /snap/bin/hugo --source ../main/ --destination ../gh-pages/
+          /snap/bin/hugo env
+          /snap/bin/hugo config
+          /snap/bin/hugo \
+              --source "${GITHUB_WORKSPACE}/main/" \
+              --destination "${GITHUB_WORKSPACE}/gh-pages/"
           git add -A :/
           git commit -m "publish main ${GITHUB_SHA}"
           git push
