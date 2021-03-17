@@ -86,7 +86,7 @@ jobs:
               | curl \
                   --request POST \
                   --header "Accept: application/vnd.github.v3+json" \
-                  --user "${COMMENT_USER}:${GITHUB_TOKEN}"
+                  --user "${COMMENT_USER}:${GITHUB_TOKEN}" \
                   "${PULL_REQUEST_COMMENTS_URL}/comments" \
                   --data "@-" \
                   "https://api.github.com/repos/${RENDER_REPOSITORY_OWNER}/${RENDER_REPOSITORY_NAME}/actions/workflows/pull_request.yaml/dispatches"
