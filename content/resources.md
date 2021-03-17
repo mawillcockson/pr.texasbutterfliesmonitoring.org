@@ -37,7 +37,7 @@ Meeting ID: 750 2991 5171
 ### Books:
 
 - {{< resource "Field Guide to Butterflies of North America by Jim Brock and Kenn Kaufman" "http://www.worldcat.org/oclc/678890396" >}}
-- Butterflies of North America by Jeffrey Glassberg, 2011
+- {{< resource "Butterflies of North America by Jeffrey Glassberg, 2011" "http://www.worldcat.org/oclc/767955603" >}}
 - Butterflies of Houston and Southeast Texas by John & Gloria Tveten, 1996
 - Butterflies of Oklahoma, Kansas, & North Texas by John Dole, Walter Gerard, and John Nelson, 2004
 - Finding Butterflies in Texas by Roland H. Wauer, 2006
