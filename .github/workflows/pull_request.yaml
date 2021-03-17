@@ -75,6 +75,7 @@ jobs:
       - name: Checkout gh-pages branch
         uses: actions/checkout@v2
         with:
+          ref: gh-pages
           path: gh-pages/
 
       - name: Render pull request
