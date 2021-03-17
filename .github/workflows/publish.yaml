@@ -35,4 +35,5 @@ jobs:
           /snap/bin/hugo --source ../main/ --destination ../gh-pages/
           git add -A :/
           git commit -m "publish main ${GITHUB_SHA}"
+          git push
 ...
