@@ -38,11 +38,15 @@ jobs:
           # Pull Request payload example:
           # https://docs.github.com/en/developers/webhooks-and-events/webhook-events-and-payloads#pull_request
           PULL_REQUEST_ID: "${{ github.event.pull_request.number }}"
-          # PERSONAL_ACCESS_TOKEN is a token generated for the account hosting the
-          # workflow file, not the account running this script. Generate one here:
+          # PERSONAL_ACCESS_TOKEN is a token generated for the account hosting
+          # the rendering repository, not the account running this script.
+          # Generate one here:
           # https://github.com/settings/tokens/new
-          PERSONAL_ACCESS_TOKEN: "${{ secrets.PULL_REQUEST_TOKEN }}"
-          RENDER_REPOSITORY_OWNER: "${{ github.repository_owner }}"
+          # The token should have public_repo scope set, and the user the token
+          # was generated for should have the ability to trigger
+          # workflow_dispatch events in the rendering repository.
+          PULL_REQUEST_USER: "${{ secrets.PULL_REQUEST_USER }}"
+          PULL_REQUEST_TOKEN: "${{ secrets.PULL_REQUEST_TOKEN }}"
         run: |
           set -eu
           # jq requires input
@@ -58,18 +62,19 @@ jobs:
               | curl \
               --request POST \
               --header "Accept: application/vnd.github.v3+json" \
-              --user "${RENDER_REPOSITORY_OWNER}:${PERSONAL_ACCESS_TOKEN}" \
+              --user "${PULL_REQUEST_USER}:${PULL_REQUEST_TOKEN}" \
               --post301 --post302 --post303 \
               --data "@-" \
-              'https://api.github.com/repos/${RENDER_REPOSITORY_OWNER}/pr.texasbutterfliesmonitoring.org/actions/workflows/pull_request.yaml/dispatches'
+              'https://api.github.com/repos/${PULL_REQUEST_USER}/pr.texasbutterfliesmonitoring.org/actions/workflows/pull_request.yaml/dispatches'
 
       - name: Make Comment
         shell: bash
         env:
+          COMMENT_USER: "github-actions"
           GITHUB_TOKEN: "${{ github.token }}"
           # See: https://docs.github.com/en/developers/webhooks-and-events/webhook-events-and-payloads#webhook-payload-example-30
           PULL_REQUEST_COMMENTS_URL: "${{ github.event.pull_request.issue_url }}"
-          HUGO_BASEURL: "https://${{ github.repository_owner }}.github.io/pr.texasbutterfliesmonitoring.org/${{ github.events.pull_request.number }}/"
+          HUGO_BASEURL: "https://pr.texasbutterfliesmonitoring.org/${{ github.events.pull_request.number }}/"
           RENDER_REPOSITORY_OWNER: "${{ github.repository_owner }}"
           RENDER_REPOSITORY_NAME: "pr.texasbutterfliesmonitoring.org"
           # This filename
@@ -89,9 +94,10 @@ jobs:
               | curl \
                   --request POST \
                   --header "Accept: application/vnd.github.v3+json" \
-                  --user "mawillcockson:${GITHUB_TOKEN}"
+                  --user "${COMMENT_USER}:${GITHUB_TOKEN}"
                   "${PULL_REQUEST_COMMENTS_URL}/comments" \
-                  --data "@-"
+                  --data "@-" \
+                  "https://api.github.com/repos/${RENDER_REPOSITORY_OWNER}/${RENDER_REPOSITORY_NAME}/actions/workflows/pull_request.yaml/dispatches"
 
   render:
     name: Build pull request site with Hugo
