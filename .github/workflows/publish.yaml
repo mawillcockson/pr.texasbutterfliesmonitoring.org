@@ -34,7 +34,8 @@ jobs:
         run: |
           git config --global user.name "${ACTIONS_USERNAME}"
           git config --global user.email "${ACTIONS_EMAIL}"
-          sudo apt install -y snap
+          sudo apt-get remove --purge -y man-db
+          sudo apt install -y --no-install-suggested --no-install-recommends snap
           sudo snap install core || sudo snap refresh core
           sudo snap install hugo --channel=extended
           cd "${GITHUB_WORKSPACE}/gh-pages/"
