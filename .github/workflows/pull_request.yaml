@@ -1,0 +1,159 @@
+---
+# This workflow is meant to be hosted in two repositories:
+# - The dispatcher
+# - The renderer
+#
+# The dispatcher runs the dispatch job on a pull_request event, and triggers
+# the renderer to run the render job, using information from the pull request.
+#
+# This level of separation is necessary:
+# https://securitylab.github.com/research/github-actions-preventing-pwn-requests
+name: Render Pull Request
+on:
+  # For a description, see:
+  # https://docs.github.com/en/actions/reference/events-that-trigger-workflows#pull_request_target
+  pull_request_target:
+    paths-ignore:
+      - README.md
+    branches:
+      - main
+
+  workflow_dispatch:
+    inputs:
+      pull_request_id:
+        description: |
+          The number assigned to the pull request. See:
+          https://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/checking-out-pull-requests-locally#modifying-an-inactive-pull-request-locally
+        required: true
+
+jobs:
+  dispatch:
+    name: Dispatch to other repository
+    runs-on: ubuntu-latest
+    if: "${{ github.event_name == 'pull_request' }}"
+    steps:
+      - name: Run script to trigger GitHub Action workflow in other repository
+        shell: bash
+        env:
+          # Pull Request payload example:
+          # https://docs.github.com/en/developers/webhooks-and-events/webhook-events-and-payloads#pull_request
+          PULL_REQUEST_ID: "${{ github.event.pull_request.number }}"
+          # PERSONAL_ACCESS_TOKEN is a token generated for the account hosting the
+          # workflow file, not the account running this script. Generate one here:
+          # https://github.com/settings/tokens/new
+          PERSONAL_ACCESS_TOKEN: "${{ secrets.PULL_REQUEST_TOKEN }}"
+          RENDER_REPOSITORY_OWNER: "${{ github.repository_owner }}"
+        run: |
+          set -eu
+          # jq requires input
+          echo "{}" \
+              | jq --compact-output '{
+              "ref": $github_ref,
+              "inputs": {
+                  "pull_request_id": $pull_request_id,
+              }
+          }' \
+              --arg github_ref "${GITHUB_REF}" \
+              --arg pull_request_id "${PULL_REQUEST_ID}" \
+              | curl \
+              --request POST \
+              --header "Accept: application/vnd.github.v3+json" \
+              --user "${RENDER_REPOSITORY_OWNER}:${PERSONAL_ACCESS_TOKEN}" \
+              --post301 --post302 --post303 \
+              --data "@-" \
+              'https://api.github.com/repos/${RENDER_REPOSITORY_OWNER}/pr.texasbutterfliesmonitoring.org/actions/workflows/pull_request.yaml/dispatches'
+
+      - name: Make Comment
+        shell: bash
+        env:
+          GITHUB_TOKEN: "${{ github.token }}"
+          # See: https://docs.github.com/en/developers/webhooks-and-events/webhook-events-and-payloads#webhook-payload-example-30
+          PULL_REQUEST_COMMENTS_URL: "${{ github.event.pull_request.issue_url }}"
+          HUGO_BASEURL: "https://${{ github.repository_owner }}.github.io/pr.texasbutterfliesmonitoring.org/${{ github.events.pull_request.number }}/"
+          RENDER_REPOSITORY_OWNER: "${{ github.repository_owner }}"
+          RENDER_REPOSITORY_NAME: "pr.texasbutterfliesmonitoring.org"
+          # This filename
+          WORKFLOW_FILE: "pull_request.yaml"
+        run: |
+          set -eu
+          printf \
+          'The changes in this pull request have been submitted to be included in a demo version of the site.
+                    
+          If [`hugo`](https://gohugo.io/) can build this pull request, [then that build can be viewed here](%s)
+          
+          If `hugo` encountered an error, [there may be some logs accessible here](<https://github.com/${RENDER_REPOSITORY_OWNER}/${RENDER_REPOSITORY_NAME}/actions/workflows/${WORKFLOW_FILE}?query=event%3Aworkflow_dispatch+branch%3Amain>).
+          
+          _note: this comment was generated automatically_' \
+              "${HUGO_BASEURL}" \
+              | jq '{"body":.}' --raw-input --slurp --compact-output \
+              | curl \
+                  --request POST \
+                  --header "Accept: application/vnd.github.v3+json" \
+                  --user "mawillcockson:${GITHUB_TOKEN}"
+                  "${PULL_REQUEST_COMMENTS_URL}/comments" \
+                  --data "@-"
+
+  render:
+    name: Build pull request site with Hugo
+    runs-on: ubuntu-latest
+    if: "${{ github.event_name == 'workflow_dispatch' }}"
+    steps:
+      - name: Checkout gh-pages branch
+        uses: actions/checkout@v2
+        with:
+          ref: gh-pages
+          path: gh-pages/
+
+      - name: Install hugo
+        shell: bash
+        run: |
+          GITHUB_WORKSPACE=~/projects/TXButterflies.github.io/hugo
+          # See: https://docs.github.com/en/rest/reference/repos#releases
+          RELEASE_BINARY_URL="$(curl --fail \
+               --silent \
+               --show-error \
+               --location \
+               'https://api.github.com/repos/gohugoio/hugo/releases' \
+               | jq -r 'map(select(.draft == false and .prerelease == false))[0]["assets"] | map(select(.name | test("^hugo_extended_\\d+\\.\\d+\\.\\d+_Linux-64bit.tar.gz$"))) | .[0].browser_download_url')"
+          mkdir -p "${GITHUB_WORKSPACE}/hugo/"
+          curl --fail \
+               --silent \
+               --show-error \
+               --location \
+               "${RELEASE_BINARY_URL}" \
+              | tar -xzf - -C "${GITHUB_WORKSPACE}/hugo/"
+          echo "HUGO_BIN=${GITHUB_WORKSPACE}/hugo/hugo" >> "${GITHUB_ENV}"
+
+      - name: Render pull request
+        shell: bash
+        env:
+          PULL_REQUEST_ID: "${{ github.event.inputs.pull_request_id }}"
+          ACTIONS_USERNAME: "github-actions"
+          ACTIONS_EMAIL: "41898282+github-actions[bot]@users.noreply.github.com"
+          HUGO_BASEURL: "https://${{ github.repository_owner }}.github.io/pr.texasbutterfliesmonitoring.org/${{ github.event.inputs.pull_request_id }}/"
+          # The repository where the pull request is; the dispatching repository
+          REPOSITORY_OF_PULL_REQUEST: "TXButterflies/TXButterflies.github.io"
+          SOURCE: "${{ github.workspace }}/pull_request/"
+          DESTINATION: "${{ github.workspace }}/gh-pages/${{ github.event.inputs.pull_request_id }}"
+        run: |
+          set -eu
+          git config --global user.name "${ACTIONS_USERNAME}"
+          git config --global user.email "${ACTIONS_EMAIL}"
+          git init "${GITHUB_WORKSPACE}/pull_request/"
+          cd "${GITHUB_WORKSPACE}/pull_request/"
+          git remote add origin "https://github.com/${REPOSITORY_OF_PULL_REQUEST}.git"
+          git fetch origin "refs/pull/${PULL_REQUEST_ID}/head"
+          git checkout FETCH_HEAD
+          cd "${GITHUB_WORKSPACE}"
+          mkdir -p "${DESTINATION}"
+          "${HUGO_BIN}" env --source "${SOURCE}"
+          "${HUGO_BIN}" config --source "${SOURCE}"
+          "${HUGO_BIN}" \
+              --source "${SOURCE}" \
+              --destination "${DESTINATION}" \
+              --cleanDestinationDir
+          cd "${GITHUB_WORKSPACE}/gh-pages/"
+          git add -A :/
+          git commit -m "publish ${REPOSITORY_OF_PULL_REQUEST}#${PULL_REQUEST_ID}"
+          git push
+...
