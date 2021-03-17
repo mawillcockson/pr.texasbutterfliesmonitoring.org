@@ -30,7 +30,7 @@ jobs:
   dispatch:
     name: Dispatch to other repository
     runs-on: ubuntu-latest
-    if: "${{ github.event_name == 'pull_request_target' }}"
+    if: "${{ github.event_name == 'pull_request' }}"
     steps:
       - name: Run script to trigger GitHub Action workflow in other repository
         shell: bash
@@ -96,7 +96,8 @@ jobs:
                   --header "Accept: application/vnd.github.v3+json" \
                   --user "${COMMENT_USER}:${GITHUB_TOKEN}"
                   "${PULL_REQUEST_COMMENTS_URL}/comments" \
-                  --data "@-"
+                  --data "@-" \
+                  "https://api.github.com/repos/${RENDER_REPOSITORY_OWNER}/${RENDER_REPOSITORY_NAME}/actions/workflows/pull_request.yaml/dispatches"
 
   render:
     name: Build pull request site with Hugo
@@ -135,7 +136,7 @@ jobs:
           PULL_REQUEST_ID: "${{ github.event.inputs.pull_request_id }}"
           ACTIONS_USERNAME: "github-actions"
           ACTIONS_EMAIL: "41898282+github-actions[bot]@users.noreply.github.com"
-          HUGO_BASEURL: "https://${{ github.repository_owner }}.github.io/${{ github.event.inputs.pull_request_id }}/"
+          HUGO_BASEURL: "https://${{ github.repository_owner }}.github.io/pr.texasbutterfliesmonitoring.org/${{ github.event.inputs.pull_request_id }}/"
           # The repository where the pull request is; the dispatching repository
           REPOSITORY_OF_PULL_REQUEST: "TXButterflies/TXButterflies.github.io"
           SOURCE: "${{ github.workspace }}/pull_request/"
