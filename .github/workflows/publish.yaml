@@ -30,9 +30,13 @@ jobs:
           git config --global user.email '41898282+github-actions[bot]@users.noreply.github.com'
           sudo apt install -y snap
           sudo snap install hugo --channel=extended
-          cd gh-pages/
+          cd "${GITHUB_WORKSPACE}/gh-pages/"
           git rm -rf :/
-          /snap/bin/hugo --source ../main/ --destination ../gh-pages/
+          /snap/bin/hugo \
+              --source "${GITHUB_WORKSPACE}/main/" \
+              --destination "${GITHUB_WORKSPACE}/gh-pages/" \
+              --environment production \
+              --verbose
           git add -A :/
           git commit -m "publish main ${GITHUB_SHA}"
           git push
