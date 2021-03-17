@@ -1,11 +1,11 @@
 ---
-# This workflow is meant to be hosted in two repositories:
-# - The dispatcher
-# - The renderer
+# This is the renderer half of a workflow
+# For a brief explanation, see:
+# https://github.com/TXButterflies/TXButterflies.github.io/pull/8#issue-595042251
 #
-# The dispatcher runs the dispatch job on a pull_request event, and triggers
-# the renderer to run the render job, using information from the pull request.
-#
+# The other half is at:
+# https://github.com/TXButterflies/pr.texasbutterfliesmonitoring.org/blob/main/.github/workflows/pull_request.yaml
+
 # This level of separation is necessary:
 # https://securitylab.github.com/research/github-actions-preventing-pwn-requests
 name: Render Pull Request
@@ -17,14 +17,6 @@ on:
       - README.md
     branches:
       - main
-
-  workflow_dispatch:
-    inputs:
-      pull_request_id:
-        description: |
-          The number assigned to the pull request. See:
-          https://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/checking-out-pull-requests-locally#modifying-an-inactive-pull-request-locally
-        required: true
 
 jobs:
   dispatch:
@@ -65,7 +57,7 @@ jobs:
               --user "${PULL_REQUEST_USER}:${PULL_REQUEST_TOKEN}" \
               --post301 --post302 --post303 \
               --data "@-" \
-              'https://api.github.com/repos/${PULL_REQUEST_USER}/pr.texasbutterfliesmonitoring.org/actions/workflows/pull_request.yaml/dispatches'
+              "https://api.github.com/repos/${PULL_REQUEST_USER}/pr.texasbutterfliesmonitoring.org/actions/workflows/pull_request.yaml/dispatches"
 
       - name: Make Comment
         shell: bash
@@ -98,68 +90,4 @@ jobs:
                   "${PULL_REQUEST_COMMENTS_URL}/comments" \
                   --data "@-" \
                   "https://api.github.com/repos/${RENDER_REPOSITORY_OWNER}/${RENDER_REPOSITORY_NAME}/actions/workflows/pull_request.yaml/dispatches"
-
-  render:
-    name: Build pull request site with Hugo
-    runs-on: ubuntu-latest
-    if: "${{ github.event_name == 'workflow_dispatch' }}"
-    steps:
-      - name: Checkout gh-pages branch
-        uses: actions/checkout@v2
-        with:
-          ref: gh-pages
-          path: gh-pages/
-
-      - name: Install hugo
-        shell: bash
-        run: |
-          GITHUB_WORKSPACE=~/projects/TXButterflies.github.io/hugo
-          # See: https://docs.github.com/en/rest/reference/repos#releases
-          RELEASE_BINARY_URL="$(curl --fail \
-               --silent \
-               --show-error \
-               --location \
-               'https://api.github.com/repos/gohugoio/hugo/releases' \
-               | jq -r 'map(select(.draft == false and .prerelease == false))[0]["assets"] | map(select(.name | test("^hugo_extended_\\d+\\.\\d+\\.\\d+_Linux-64bit.tar.gz$"))) | .[0].browser_download_url')"
-          mkdir -p "${GITHUB_WORKSPACE}/hugo/"
-          curl --fail \
-               --silent \
-               --show-error \
-               --location \
-               "${RELEASE_BINARY_URL}" \
-              | tar -xzf - -C "${GITHUB_WORKSPACE}/hugo/"
-          echo "HUGO_BIN=${GITHUB_WORKSPACE}/hugo/hugo" >> "${GITHUB_ENV}"
-
-      - name: Render pull request
-        shell: bash
-        env:
-          PULL_REQUEST_ID: "${{ github.event.inputs.pull_request_id }}"
-          ACTIONS_USERNAME: "github-actions"
-          ACTIONS_EMAIL: "41898282+github-actions[bot]@users.noreply.github.com"
-          HUGO_BASEURL: "https://${{ github.repository_owner }}.github.io/${{ github.event.inputs.pull_request_id }}/"
-          # The repository where the pull request is; the dispatching repository
-          REPOSITORY_OF_PULL_REQUEST: "TXButterflies/TXButterflies.github.io"
-          SOURCE: "${{ github.workspace }}/pull_request/"
-          DESTINATION: "${{ github.workspace }}/gh-pages/${{ github.event.inputs.pull_request_id }}"
-        run: |
-          set -eu
-          git config --global user.name "${ACTIONS_USERNAME}"
-          git config --global user.email "${ACTIONS_EMAIL}"
-          git init "${GITHUB_WORKSPACE}/pull_request/"
-          cd "${GITHUB_WORKSPACE}/pull_request/"
-          git remote add origin "https://github.com/${REPOSITORY_OF_PULL_REQUEST}.git"
-          git fetch origin "refs/pull/${PULL_REQUEST_ID}/head"
-          git checkout FETCH_HEAD
-          cd "${GITHUB_WORKSPACE}"
-          mkdir -p "${DESTINATION}"
-          "${HUGO_BIN}" env --source "${SOURCE}"
-          "${HUGO_BIN}" config --source "${SOURCE}"
-          "${HUGO_BIN}" \
-              --source "${SOURCE}" \
-              --destination "${DESTINATION}" \
-              --cleanDestinationDir
-          cd "${GITHUB_WORKSPACE}/gh-pages/"
-          git add -A :/
-          git commit -m "publish ${REPOSITORY_OF_PULL_REQUEST}#${PULL_REQUEST_ID}"
-          git push
 ...
