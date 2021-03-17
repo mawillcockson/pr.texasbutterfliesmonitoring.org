@@ -106,6 +106,7 @@ jobs:
               --baseURL "${RENDER_URL}" \
               --source "${GITHUB_WORKSPACE}/pull_request/" \
               --destination "${GITHUB_WORKSPACE}/gh-pages/${PULL_REQUEST_ID}" \
+              --cleanDestinationDir \
               --verbose
           cd "${GITHUB_WORKSPACE}/gh-pages/"
           git add -A :/
