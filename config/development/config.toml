@@ -2,3 +2,4 @@
 # hugo server
 verbose = true
 verboseLog = true
+minify = false
