@@ -39,6 +39,7 @@ jobs:
           # https://docs.github.com/en/developers/webhooks-and-events/webhook-events-and-payloads#pull_request
           PULL_REQUEST_ID: "${{ github.event.pull_request.number }}"
           PERSONAL_ACCESS_TOKEN: "${{ secrets.PULL_REQUEST_TOKEN }}"
+          RENDER_REPOSITORY_OWNER: "${{ github.repository_owner }}"
         run: |
           #!/bin/bash
           # $PERSONAL_ACCESS_TOKEN is a token generated for the account hosting the
@@ -58,14 +59,22 @@ jobs:
               | curl \
               --request POST \
               --header "Accept: application/vnd.github.v3+json" \
-              --user "mawillcockson:${PERSONAL_ACCESS_TOKEN}" \
+              --user "${RENDER_REPOSITORY_OWNER}:${PERSONAL_ACCESS_TOKEN}" \
               --post301 --post302 --post303 \
               --data "@-" \
-              'https://api.github.com/repos/mawillcockson/pr.texasbutterfliesmonitoring.org/actions/workflows/pull_request.yaml/dispatches'
+              'https://api.github.com/repos/${RENDER_REPOSITORY_OWNER}/pr.texasbutterfliesmonitoring.org/actions/workflows/pull_request.yaml/dispatches'
+
       - name: Make Comment
         shell: bash
         env:
           GITHUB_TOKEN: "${{ github.token }}"
+          # See: https://docs.github.com/en/developers/webhooks-and-events/webhook-events-and-payloads#webhook-payload-example-30
+          PULL_REQUEST_COMMENTS_URL: "${{ github.event.pull_request.issue_url }}"
+          HUGO_BASEURL: "https://${{ github.repository_owner }}.github.io/pr.texasbutterfliesmonitoring.org/${{ github.events.pull_request.number }}/"
+          RENDER_REPOSITORY_OWNER: "${{ github.repository_owner }}"
+          RENDER_REPOSITORY_NAME: "pr.texasbutterfliesmonitoring.org"
+          # This filename
+          WORKFLOW_FILE: "pull_request.yaml"
         run: |
           set -eu
           printf \
@@ -73,16 +82,16 @@ jobs:
                     
           If [`hugo`](https://gohugo.io/) can build this pull request, [then that build can be viewed here](%s)
           
-          If `hugo` encountered an error, [there may be some logs accessible here](https://github.com/mawillcockson/pr.texasbutterfliesmonitoring.org/actions/workflows/pull_request.yaml?query=event%3Aworkflow_dispatch+branch%3Amain).
+          If `hugo` encountered an error, [there may be some logs accessible here](<https://github.com/${RENDER_REPOSITORY_OWNER}/${RENDER_REPOSITORY_NAME}/actions/workflows/${WORKFLOW_FILE}?query=event%3Aworkflow_dispatch+branch%3Amain>).
           
           _note: this comment was generated automatically_' \
-              "${RENDER_URL}" \
+              "${HUGO_BASEURL}" \
               | jq '{"body":.}' --raw-input --slurp --compact-output \
               | curl \
                   --request POST \
                   --header "Accept: application/vnd.github.v3+json" \
                   --user "mawillcockson:${GITHUB_TOKEN}"
-                  "https://api.github.com/repos/mawillcockson/TXButterflies.github.io/issues/${PULL_REQUEST_ID}/comments" \
+                  "${PULL_REQUEST_COMMENTS_URL}/comments" \
                   --data "@-"
 
   render:
@@ -100,30 +109,33 @@ jobs:
         shell: bash
         env:
           PULL_REQUEST_ID: "${{ github.event.inputs.pull_request_id }}"
+          ACTIONS_USERNAME: "github-actions"
+          ACTIONS_EMAIL: "41898282+github-actions[bot]@users.noreply.github.com"
+          HUGO_BASEURL: "https://${{ github.repository_owner }}.github.io/pr.texasbutterfliesmonitoring.org/${{ github.events.inputs.pull_request_id }}/"
+          # The repository where the pull request is; the dispatching repository
+          REPOSITORY_OF_PULL_REQUEST: "TXButterflies/TXButterflies.github.io"
         run: |
           set -eu
-          ACTIONS_USERNAME='github-actions'
-          ACTIONS_EMAIL='41898282+github-actions[bot]@users.noreply.github.com'
-          RENDER_URL="https://mawillcockson.github.io/pr.texasbutterfliesmonitoring.org/${PULL_REQUEST_ID}/"
           git config --global user.name "${ACTIONS_USERNAME}"
           git config --global user.email "${ACTIONS_EMAIL}"
           git init "${GITHUB_WORKSPACE}/pull_request/"
           cd "${GITHUB_WORKSPACE}/pull_request/"
-          git remote add origin 'https://github.com/TXButterflies/TXButterflies.github.io.git'
+          git remote add origin "https://github.com/${REPOSITORY_OF_PULL_REQUEST}.git"
           git fetch origin "refs/pull/${PULL_REQUEST_ID}/head"
           git checkout FETCH_HEAD
           cd "${GITHUB_WORKSPACE}"
           sudo apt install -y snap
+          sudo snap install core || sudo snap refresh core
           sudo snap install hugo --channel=extended
           mkdir -p "${GITHUB_WORKSPACE}/gh-pages/${PULL_REQUEST_ID}/"
+          /snap/bin/hugo env
+          /snap/bin/hugo config
           /snap/bin/hugo \
-              --baseURL "${RENDER_URL}" \
               --source "${GITHUB_WORKSPACE}/pull_request/" \
               --destination "${GITHUB_WORKSPACE}/gh-pages/${PULL_REQUEST_ID}" \
-              --cleanDestinationDir \
-              --verbose
+              --cleanDestinationDir
           cd "${GITHUB_WORKSPACE}/gh-pages/"
           git add -A :/
-          git commit -m "publish TXButterflies/TXButterflies.github.io#${PULL_REQUEST_ID}"
+          git commit -m "publish ${REPOSITORY_OF_PULL_REQUEST}#${PULL_REQUEST_ID}"
           git push
 ...
