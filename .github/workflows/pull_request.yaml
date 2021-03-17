@@ -80,7 +80,7 @@ jobs:
       - name: Render pull request
         shell: bash
         env:
-          PULL_REQUEST_ID: "${{ github.events.input.pull_request_id }}"
+          PULL_REQUEST_ID: "${{ github.event.inputs.pull_request_id }}"
         run: |
           ACTIONS_USERNAME='github-actions'
           ACTIONS_EMAIL='41898282+github-actions[bot]@users.noreply.github.com'
