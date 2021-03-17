@@ -70,7 +70,7 @@ jobs:
   render:
     name: Build pull request site with Hugo
     runs-on: ubuntu-latest
-    if: "${{ github.even_name == 'workflow_dispatch' }}"
+    if: "${{ github.event_name == 'workflow_dispatch' }}"
     steps:
       - name: Checkout gh-pages branch
         uses: actions/checkout@v2
