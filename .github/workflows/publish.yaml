@@ -28,8 +28,8 @@ jobs:
         run: |
           git config --global user.name "github-actions"
           git config --global user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          apt install -y snap
-          snap install hugo --channel=extended
+          sudo apt install -y snap
+          sudo snap install hugo --channel=extended
           cd gh-pages/
           git rm -rf :/
           /snap/bin/hugo --source ../main/ --destination ../gh-pages/
