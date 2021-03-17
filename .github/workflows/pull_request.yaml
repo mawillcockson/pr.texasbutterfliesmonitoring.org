@@ -95,8 +95,8 @@ jobs:
           git config --global user.name "${ACTIONS_USERNAME}"
           git config --global user.email "${ACTIONS_EMAIL}"
           cd ./pull_request/
-          git remote add origin 'https://github.com/TXButterflies/TXButterflies.github.io.git'
-          git fetch origin "refs/pull/${PULL_REQUEST_ID}/head"
+          git remote add other 'https://github.com/TXButterflies/TXButterflies.github.io.git'
+          git fetch other "refs/pull/${PULL_REQUEST_ID}/head"
           git rm -rf :/
           git checkout -f FETCH_HEAD
           cd ../
