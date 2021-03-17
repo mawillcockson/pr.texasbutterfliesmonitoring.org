@@ -87,10 +87,12 @@ jobs:
           RENDER_URL="https://mawillcockson.github.io/pr.texasbutterfliesmonitoring.org/${PULL_REQUEST_ID}/"
           git config --global user.name "${ACTIONS_USERNAME}"
           git config --global user.email "${ACTIONS_EMAIL}"
-          git clone --depth 1 --single-branch \
-              --branch "pull/${PULL_REQUEST_ID}/head" \
-              'https://github.com/TXButterflies/TXButterflies.github.io.git' \
-              ./pull_request/
+          git init ./pull_request/
+          cd ./pull_request/
+          git remote add origin 'https://github.com/TXButterflies/TXButterflies.github.io.git'
+          git fetch origin "refs/pull/${PULL_REQUEST_ID}/head"
+          git checkout FETCH_HEAD
+          cd ~/
           sudo apt install -y snap jq
           sudo snap install hugo --channel=extended
           mkdir -p "./gh-pages/${PULL_REQUEST_ID}/"
@@ -103,5 +105,4 @@ jobs:
           git add -A :/
           git commit -m "publish TXButterflies/TXButterflies.github.io#${PULL_REQUEST_ID}"
           git push
-          
 ...
