@@ -57,7 +57,7 @@ jobs:
               --user "${PULL_REQUEST_USER}:${PULL_REQUEST_TOKEN}" \
               --post301 --post302 --post303 \
               --data "@-" \
-              "https://api.github.com/repos/${PULL_REQUEST_USER}/pr.texasbutterfliesmonitoring.org/actions/workflows/pull_request.yaml/dispatches"
+              'https://api.github.com/repos/TXButterflies/pr.texasbutterfliesmonitoring.org/actions/workflows/pull_request.yaml/dispatches'
 
       - name: Make Comment
         shell: bash
@@ -66,7 +66,7 @@ jobs:
           GITHUB_TOKEN: "${{ github.token }}"
           # See: https://docs.github.com/en/developers/webhooks-and-events/webhook-events-and-payloads#webhook-payload-example-30
           PULL_REQUEST_COMMENTS_URL: "${{ github.event.pull_request.issue_url }}"
-          HUGO_BASEURL: "https://pr.texasbutterfliesmonitoring.org/${{ github.events.pull_request.number }}/"
+          HUGO_BASEURL: "https://pr.texasbutterfliesmonitoring.org/${{ github.event.pull_request.number }}/"
           RENDER_REPOSITORY_OWNER: "${{ github.repository_owner }}"
           RENDER_REPOSITORY_NAME: "pr.texasbutterfliesmonitoring.org"
           # This filename
@@ -76,17 +76,22 @@ jobs:
           printf \
           'The changes in this pull request have been submitted to be included in a demo version of the site.
                     
-          If [`hugo`](https://gohugo.io/) can build this pull request, [then that build can be viewed here](%s)
+          If [`hugo`](https://gohugo.io/) can build this pull request, [then that build can be viewed here, once the build is finished](%s).
+
+          If you have visited the above link before, you may have to refresh your browser to see the changes. This is due to browsers caching data from websites. [This link has more information about this](https://refreshyourcache.com/en/cache/).
           
-          If `hugo` encountered an error, [there may be some logs accessible here](<https://github.com/${RENDER_REPOSITORY_OWNER}/${RENDER_REPOSITORY_NAME}/actions/workflows/${WORKFLOW_FILE}?query=event%3Aworkflow_dispatch+branch%3Amain>).
+          If `hugo` encountered an error, [there may be some logs accessible here](<https://github.com/%s/%s/actions/workflows/%s?query=event%3Aworkflow_dispatch+branch%3Amain>).
           
           _note: this comment was generated automatically_' \
               "${HUGO_BASEURL}" \
+              "${RENDER_REPOSITORY_OWNER}" \
+              "${RENDER_REPOSITORY_NAME}" \
+              "${WORKFLOW_FILE}" \
               | jq '{"body":.}' --raw-input --slurp --compact-output \
               | curl \
                   --request POST \
                   --header "Accept: application/vnd.github.v3+json" \
-                  --user "${COMMENT_USER}:${GITHUB_TOKEN}"
+                  --user "${COMMENT_USER}:${GITHUB_TOKEN}" \
                   "${PULL_REQUEST_COMMENTS_URL}/comments" \
                   --data "@-" \
                   "https://api.github.com/repos/${RENDER_REPOSITORY_OWNER}/${RENDER_REPOSITORY_NAME}/actions/workflows/pull_request.yaml/dispatches"
