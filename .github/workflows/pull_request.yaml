@@ -38,13 +38,12 @@ jobs:
           # Pull Request payload example:
           # https://docs.github.com/en/developers/webhooks-and-events/webhook-events-and-payloads#pull_request
           PULL_REQUEST_ID: "${{ github.event.pull_request.number }}"
+          # PERSONAL_ACCESS_TOKEN is a token generated for the account hosting the
+          # workflow file, not the account running this script. Generate one here:
+          # https://github.com/settings/tokens/new
           PERSONAL_ACCESS_TOKEN: "${{ secrets.PULL_REQUEST_TOKEN }}"
           RENDER_REPOSITORY_OWNER: "${{ github.repository_owner }}"
         run: |
-          #!/bin/bash
-          # $PERSONAL_ACCESS_TOKEN is a token generated for the account hosting the
-          # workflow file, not the account running this script. Generate one here:
-          # https://github.com/settings/tokens/new
           set -eu
           # jq requires input
           echo "{}" \
@@ -105,6 +104,26 @@ jobs:
           ref: gh-pages
           path: gh-pages/
 
+      - name: Install hugo
+        shell: bash
+        run: |
+          GITHUB_WORKSPACE=~/projects/TXButterflies.github.io/hugo
+          # See: https://docs.github.com/en/rest/reference/repos#releases
+          RELEASE_BINARY_URL="$(curl --fail \
+               --silent \
+               --show-error \
+               --location \
+               'https://api.github.com/repos/gohugoio/hugo/releases' \
+               | jq -r 'map(select(.draft == false and .prerelease == false))[0]["assets"] | map(select(.name | test("^hugo_extended_\\d+\\.\\d+\\.\\d+_Linux-64bit.tar.gz$"))) | .[0].browser_download_url')"
+          mkdir -p "${GITHUB_WORKSPACE}/hugo/"
+          curl --fail \
+               --silent \
+               --show-error \
+               --location \
+               "${RELEASE_BINARY_URL}" \
+              | tar -xzf - -C "${GITHUB_WORKSPACE}/hugo/"
+          echo "HUGO_BIN=${GITHUB_WORKSPACE}/hugo/hugo" >> "${GITHUB_ENV}"
+
       - name: Render pull request
         shell: bash
         env:
@@ -114,6 +133,8 @@ jobs:
           HUGO_BASEURL: "https://${{ github.repository_owner }}.github.io/pr.texasbutterfliesmonitoring.org/${{ github.events.inputs.pull_request_id }}/"
           # The repository where the pull request is; the dispatching repository
           REPOSITORY_OF_PULL_REQUEST: "TXButterflies/TXButterflies.github.io"
+          SOURCE: "${{ github.workspace }}/pull_request/"
+          DESTINATION: "${{ github.workspace }}/gh-pages/${{ github.event.inputs.pull_request_id }}"
         run: |
           set -eu
           git config --global user.name "${ACTIONS_USERNAME}"
@@ -124,16 +145,12 @@ jobs:
           git fetch origin "refs/pull/${PULL_REQUEST_ID}/head"
           git checkout FETCH_HEAD
           cd "${GITHUB_WORKSPACE}"
-          sudo apt-get remove --purge -y man-db
-          sudo apt install -y --no-install-suggested --no-install-recommends snap
-          sudo snap install core || sudo snap refresh core
-          sudo snap install hugo --channel=extended
-          mkdir -p "${GITHUB_WORKSPACE}/gh-pages/${PULL_REQUEST_ID}/"
-          /snap/bin/hugo env
-          /snap/bin/hugo config
-          /snap/bin/hugo \
-              --source "${GITHUB_WORKSPACE}/pull_request/" \
-              --destination "${GITHUB_WORKSPACE}/gh-pages/${PULL_REQUEST_ID}" \
+          mkdir -p "${DESTINATION}"
+          "${HUGO_BIN}" env --source "${SOURCE}"
+          "${HUGO_BIN}" config --source "${SOURCE}"
+          "${HUGO_BIN}" \
+              --source "${SOURCE}" \
+              --destination "${DESTINATION}" \
               --cleanDestinationDir
           cd "${GITHUB_WORKSPACE}/gh-pages/"
           git add -A :/
