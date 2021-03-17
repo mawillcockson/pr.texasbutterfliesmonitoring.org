@@ -124,7 +124,8 @@ jobs:
           git fetch origin "refs/pull/${PULL_REQUEST_ID}/head"
           git checkout FETCH_HEAD
           cd "${GITHUB_WORKSPACE}"
-          sudo apt install -y snap
+          sudo apt-get remove --purge -y man-db
+          sudo apt install -y --no-install-suggested --no-install-recommends snap
           sudo snap install core || sudo snap refresh core
           sudo snap install hugo --channel=extended
           mkdir -p "${GITHUB_WORKSPACE}/gh-pages/${PULL_REQUEST_ID}/"
