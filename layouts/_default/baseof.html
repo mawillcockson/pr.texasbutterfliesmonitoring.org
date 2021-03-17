@@ -12,8 +12,8 @@
     {{ hugo.Generator }}
     <META NAME="ROBOTS" CONTENT="INDEX, FOLLOW">
     <link href="https://unpkg.com/sanitize.css" rel="stylesheet">
-    <link rel="stylesheet" href="/style.css">
-    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="{{ "/style.css" | relURL | safeURL }}">
+    <link rel="shortcut icon" href="{{ "/favicon.ico" | relURL | safeURL }}" type="image/x-icon">
   </head>
 
   <body>

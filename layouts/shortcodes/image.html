@@ -10,7 +10,7 @@
   {{- .Scratch.Set "class" (.Get 2) -}}
 {{- end -}}
 {{- $alt := .Scratch.Get "alt" | or "" -}}
-{{- $src := .Scratch.Get "src" | safeURL -}}
+{{- $src := .Scratch.Get "src" | relURL | safeURL -}}
 {{- $class := .Scratch.Get "class" | or "" -}}
 <picture {{ with $class }}class="{{ . }}"{{ end }}>{{- $e -}}
     <source srcset="{{- $src -}}">{{- $e -}}

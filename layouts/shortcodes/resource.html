@@ -1,5 +1,5 @@
 {{ if .IsNamedParams }}
-  {{ .Scratch.Set "href" (.Get "url" | or (.Get "href")) | safeURL }}
+  {{ .Scratch.Set "href" (.Get "url" | or (.Get "href")) }}
   {{ .Scratch.Set "name" (.Get "name" | or (.Get "text")) }}
 {{ else }}
   {{ .Scratch.Set "href" (.Get 1) }}
@@ -10,14 +10,15 @@
 
 {{ define "resourceimage" }}
   {{ if findRE `^https?://(www\.)?pollardbase.org` . }}
-    <img src="/pollard_small.png" alt="PollardBase Logo">
+    <span><img src="{{ "/pollard_small.png" | relURL | safeURL }}" alt="PollardBase Logo"></span>
   {{ else if findRE `(?i)^https?://` . }}
     <span>🔗</span>
   {{ else }}
     {{ $ext := index (findRE `(?i)\.\w*?$` .) 0 | lower }}
     {{ if $ext | eq ".pdf" }}
-      <span><img src="/icon_pdf.png" alt="PDF icon"></span>
+      <span><img src="{{ "/icon_pdf.png" | relURL | safeURL }}" alt="PDF icon"></span>
     {{ end }}
   {{ end }}
 {{ end }}
+{{ $href = $href | relURL | safeURL }}
 <a href="{{ $href }}" target="_blank">{{ template "resourceimage" $href }}{{ $name }}</a>
