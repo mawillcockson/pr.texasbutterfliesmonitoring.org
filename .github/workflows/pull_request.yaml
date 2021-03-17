@@ -57,7 +57,7 @@ jobs:
           printf \
           'The changes in this pull request have been submitted to be included in a demo version of the site.
                     
-          [If [`hugo`](https://gohugo.io/) can build this pull request, then that build can be viewed here](%s)
+          If [`hugo`](https://gohugo.io/) can build this pull request, [then that build can be viewed here](%s)
           
           If `hugo` encountered an error, [there may be some logs accessible here](https://github.com/mawillcockson/pr.texasbutterfliesmonitoring.org/actions/workflows/pull_request.yaml?query=event%3Aworkflow_dispatch+branch%3Amain).
           
