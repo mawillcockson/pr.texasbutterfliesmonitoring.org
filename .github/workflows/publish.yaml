@@ -29,6 +29,8 @@ jobs:
           HUGO_ENVIRONMENT: "production"
           ACTIONS_USERNAME: "github-actions"
           ACTIONS_EMAIL: "41898282+github-actions[bot]@users.noreply.github.com"
+          SOURCE: "${{ github.workspace }}/main/"
+          DESTINATION: "${{ github.workspace }}/gh-pages/"
         run: |
           git config --global user.name "${ACTIONS_USERNAME}"
           git config --global user.email "${ACTIONS_EMAIL}"
@@ -37,11 +39,11 @@ jobs:
           sudo snap install hugo --channel=extended
           cd "${GITHUB_WORKSPACE}/gh-pages/"
           git rm -rf :/
-          /snap/bin/hugo env
-          /snap/bin/hugo config
+          /snap/bin/hugo env --source "${SOURCE}"
+          /snap/bin/hugo config --source "${SOURCE}"
           /snap/bin/hugo \
-              --source "${GITHUB_WORKSPACE}/main/" \
-              --destination "${GITHUB_WORKSPACE}/gh-pages/"
+              --source "${SOURCE}" \
+              --destination "${DESTINATION}"
           git add -A :/
           git commit -m "publish main ${GITHUB_SHA}"
           git push
