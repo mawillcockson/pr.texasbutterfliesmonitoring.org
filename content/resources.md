@@ -30,9 +30,9 @@ Meeting ID: 750 2991 5171
 - Houston Area:
   - {{< resource `"Butterflies of Southeast Texas and the Upper Texas Coast" by Tveten and Tveten` "https://www.worldcat.org/oclc/747533761" >}}
 - North Texas:
-  - "Butterflies of North Texas" by Wauer & Bugh
+  - {{< resource `"Butterflies of North Texas" by Wauer & Bugh` "http://www.worldcat.org/oclc/944404444" >}}
 - South Texas:
-  - "Butterflies of the Lower Rio Grande Valley" by Roland H. Wauer
+  - {{< resource `"Butterflies of the Lower Rio Grande Valley" by Roland H. Wauer` "http://www.worldcat.org/oclc/747533757" >}}
 
 ### Books:
 
