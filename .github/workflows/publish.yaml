@@ -1,0 +1,38 @@
+---
+name: Publish Website
+on:
+  push:
+    paths-ignore:
+      - README.md
+    branches:
+      - main
+
+jobs:
+  publish:
+    name: Hugo Build & Publish to gh-pages
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout build files
+        uses: actions/checkout@v2
+        with:
+          path: main/
+
+      - name: Checkout gh-pages branch
+        uses: actions/checkout@v2
+        with:
+          ref: gh-pages
+          path: gh-pages/
+
+      - name: Set github-actions as the git user, install hugo, build website, publish to gh-pages
+        shell: bash
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          apt install -y snap
+          snap install hugo --channel=extended
+          cd gh-pages/
+          git rm -rf :/
+          /snap/bin/hugo --source ../main/ --destination ../gh-pages/
+          git add -A :/
+          git commit -m "publish main ${GITHUB_SHA}"
+...
