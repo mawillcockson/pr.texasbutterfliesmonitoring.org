@@ -65,7 +65,7 @@ jobs:
               --user "${PULL_REQUEST_USER}:${PULL_REQUEST_TOKEN}" \
               --post301 --post302 --post303 \
               --data "@-" \
-              "https://api.github.com/repos/${PULL_REQUEST_USER}/pr.texasbutterfliesmonitoring.org/actions/workflows/pull_request.yaml/dispatches"
+              'https://api.github.com/repos/TXButterflies/pr.texasbutterfliesmonitoring.org/actions/workflows/pull_request.yaml/dispatches'
 
       - name: Make Comment
         shell: bash
