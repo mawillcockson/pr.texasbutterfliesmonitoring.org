@@ -30,16 +30,16 @@ Meeting ID: 750 2991 5171
 - Houston Area:
   - {{< resource `"Butterflies of Southeast Texas and the Upper Texas Coast" by Tveten and Tveten` "https://www.worldcat.org/oclc/747533761" >}}
 - North Texas:
-  - "Butterflies of North Texas" by Wauer & Bugh
+  - {{< resource `"Butterflies of North Texas" by Wauer & Bugh` "http://www.worldcat.org/oclc/944404444" >}}
 - South Texas:
-  - "Butterflies of the Lower Rio Grande Valley" by Roland H. Wauer
+  - {{< resource `"Butterflies of the Lower Rio Grande Valley" by Roland H. Wauer` "http://www.worldcat.org/oclc/747533757" >}}
 
 ### Books:
 
-- Field Guide to Butterflies of North America by Jim Brock and Kenn Kaufman
-- Butterflies of North America by Jeffrey Glassberg, 2011
-- Butterflies of Houston and Southeast Texas by John & Gloria Tveten, 1996
-- Butterflies of Oklahoma, Kansas, & North Texas by John Dole, Walter Gerard, and John Nelson, 2004
+- {{< resource "Field Guide to Butterflies of North America by Jim Brock and Kenn Kaufman" "http://www.worldcat.org/oclc/678890396" >}}
+- {{< resource "Butterflies of North America by Jeffrey Glassberg, 2011" "http://www.worldcat.org/oclc/767955603" >}}
+- {{< resource "Butterflies of Houston and Southeast Texas by John & Gloria Tveten, 1996" "http://www.worldcat.org/oclc/712488536" >}}
+- {{< resource "Butterflies of Oklahoma, Kansas, & North Texas by John Dole, Walter Gerard, and John Nelson, 2004" "http://www.worldcat.org/oclc/1071866613" >}}
 - Finding Butterflies in Texas by Roland H. Wauer, 2006
 
 ## Additional Information
