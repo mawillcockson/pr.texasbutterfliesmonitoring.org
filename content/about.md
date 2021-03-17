@@ -10,13 +10,12 @@ The Texas Butterfly Monitoring Network is a Citizen Science Project started in
 [North American Butterfly Monitoring Network][]. Participants walk the same
 route at least nine times over the course of the year and will record every
 butterfly seen, giving us a comprehensive picture of what butterflies are
-occurring where throughout the Lone Star State. Texas has more butterflies than
-any other state in the United States, so long-term monitoring is crucial to
-understanding butterfly movement and assessing the health of butterfly
-habitats.
+occurring in different parts of the Lone Star State. Texas has more butterflies
+than any other state, so long-term monitoring is crucial to understanding
+butterfly movement and assessing the health of butterfly habitats.
 
 The Texas Butterfly Monitoring Network is designed for both seasoned observers
-of butterflies and newly interested people just starting butterfly
+of butterflies, and newly interested people just starting butterfly
 observations! If you are interested, please sign up by clicking the button on
 [the home page](</>). Under the
 [Resources tab]({{< relref "resources" >}}), members can find basic information
