@@ -40,6 +40,7 @@ jobs:
           PULL_REQUEST_ID: "${{ github.event.pull_request.number }}"
           PERSONAL_ACCESS_TOKEN: "${{ secrets.PULL_REQUEST_TOKEN }}"
         run: |
+          set -eu
           curl --fail \
                --silent \
                --show-error \
@@ -49,7 +50,10 @@ jobs:
 
       - name: Make Comment
         shell: bash
+        env:
+          GITHUB_TOKEN: "${{ github.token }}"
         run: |
+          set -eu
           printf \
           'The changes in this pull request have been submitted to be included in a demo version of the site.
                     
@@ -78,38 +82,32 @@ jobs:
           ref: gh-pages
           path: gh-pages/
 
-      - name: Checkout dummy repository branch
-        uses: actions/checkout@v2
-        with:
-          ref: main
-          path: pull_request/
-
       - name: Render pull request
         shell: bash
         env:
           PULL_REQUEST_ID: "${{ github.event.inputs.pull_request_id }}"
         run: |
+          set -eu
           ACTIONS_USERNAME='github-actions'
           ACTIONS_EMAIL='41898282+github-actions[bot]@users.noreply.github.com'
           RENDER_URL="https://mawillcockson.github.io/pr.texasbutterfliesmonitoring.org/${PULL_REQUEST_ID}/"
           git config --global user.name "${ACTIONS_USERNAME}"
           git config --global user.email "${ACTIONS_EMAIL}"
-          cd ./pull_request/
-          git remote add other 'https://github.com/TXButterflies/TXButterflies.github.io.git'
-          git fetch other "refs/pull/${PULL_REQUEST_ID}/head"
-          git rm -rf :/
-          git checkout -f FETCH_HEAD
-          cd ../
+          git init "${GITHUB_WORKSPACE}/pull_request/"
+          cd "${GITHUB_WORKSPACE}/pull_request/"
+          git remote add origin 'https://github.com/TXButterflies/TXButterflies.github.io.git'
+          git fetch origin "refs/pull/${PULL_REQUEST_ID}/head"
+          git checkout FETCH_HEAD
+          cd "${GITHUB_WORKSPACE}"
           sudo apt install -y snap jq
-          sudo snap install core || sudo snap refresh core
           sudo snap install hugo --channel=extended
-          mkdir -p "./gh-pages/${PULL_REQUEST_ID}/"
+          mkdir -p "${GITHUB_WORKSPACE}/gh-pages/${PULL_REQUEST_ID}/"
           /snap/bin/hugo \
               --baseURL "${RENDER_URL}" \
-              --source ./pull_request/ \
-              --destination "./gh-pages/${PULL_REQUEST_ID}" \
+              --source "${GITHUB_WORKSPACE}/pull_request/" \
+              --destination "${GITHUB_WORKSPACE}/gh-pages/${PULL_REQUEST_ID}" \
               --verbose
-          cd ./gh-pages/
+          cd "${GITHUB_WORKSPACE}/gh-pages/"
           git add -A :/
           git commit -m "publish TXButterflies/TXButterflies.github.io#${PULL_REQUEST_ID}"
           git push
