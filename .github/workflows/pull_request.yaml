@@ -92,7 +92,7 @@ jobs:
           git remote add origin 'https://github.com/TXButterflies/TXButterflies.github.io.git'
           git fetch origin "refs/pull/${PULL_REQUEST_ID}/head"
           git checkout FETCH_HEAD
-          cd ~/
+          cd ../
           sudo apt install -y snap jq
           sudo snap install hugo --channel=extended
           mkdir -p "./gh-pages/${PULL_REQUEST_ID}/"
