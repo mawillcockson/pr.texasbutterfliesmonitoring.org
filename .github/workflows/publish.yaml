@@ -23,25 +23,44 @@ jobs:
           ref: gh-pages
           path: gh-pages/
 
+      - name: Install hugo
+        shell: bash
+        run: |
+          GITHUB_WORKSPACE=~/projects/TXButterflies.github.io/hugo
+          # See: https://docs.github.com/en/rest/reference/repos#releases
+          RELEASE_BINARY_URL="$(curl --fail \
+               --silent \
+               --show-error \
+               --location \
+               'https://api.github.com/repos/gohugoio/hugo/releases' \
+               | jq -r 'map(select(.draft == false and .prerelease == false))[0]["assets"] | map(select(.name | test("^hugo_extended_\\d+\\.\\d+\\.\\d+_Linux-64bit.tar.gz$"))) | .[0].browser_download_url')"
+          mkdir -p "${GITHUB_WORKSPACE}/hugo/"
+          curl --fail \
+               --silent \
+               --show-error \
+               --location \
+               "${RELEASE_BINARY_URL}" \
+              | tar -xzf - -C "${GITHUB_WORKSPACE}/hugo/"
+          echo "HUGO_BIN=${GITHUB_WORKSPACE}/hugo/hugo" >> "${GITHUB_ENV}"
+
       - name: Set github-actions as the git user, install hugo, build website, publish to gh-pages
         shell: bash
         env:
           HUGO_ENVIRONMENT: "production"
           ACTIONS_USERNAME: "github-actions"
           ACTIONS_EMAIL: "41898282+github-actions[bot]@users.noreply.github.com"
+          SOURCE: "${{ github.workspace }}/main/"
+          DESTINATION: "${{ github.workspace }}/gh-pages/"
         run: |
           git config --global user.name "${ACTIONS_USERNAME}"
           git config --global user.email "${ACTIONS_EMAIL}"
-          sudo apt install -y snap
-          sudo snap install core || sudo snap refresh core
-          sudo snap install hugo --channel=extended
           cd "${GITHUB_WORKSPACE}/gh-pages/"
           git rm -rf :/
-          /snap/bin/hugo env
-          /snap/bin/hugo config
-          /snap/bin/hugo \
-              --source "${GITHUB_WORKSPACE}/main/" \
-              --destination "${GITHUB_WORKSPACE}/gh-pages/"
+          "${HUGO_BIN}" env --source "${SOURCE}"
+          "${HUGO_BIN}" config --source "${SOURCE}"
+          "${HUGO_BIN}" \
+              --source "${SOURCE}" \
+              --destination "${DESTINATION}"
           git add -A :/
           git commit -m "publish main ${GITHUB_SHA}"
           git push
