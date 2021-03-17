@@ -17,4 +17,4 @@ butterfly frequency, species diversity, and location throughout the state.
 Anyone can become a monitor, even if you don't know your local butterfly
 species yet! You will learn the species as you go.
 
-{{< button "Sign Up to Volunteer!" "https://docs.google.com/forms/d/e/1FAIpQLSe-_PF1vNUz5JVeMqPTumur4N5AXDbc1aa4DLK5PfDT2islYQ/viewform?embedded=true" >}}
+{{< button "Sign Up to Volunteer!" "https://docs.google.com/forms/d/e/1FAIpQLSe-_PF1vNUz5JVeMqPTumur4N5AXDbc1aa4DLK5PfDT2islYQ/viewform?embedded=true" />}}
