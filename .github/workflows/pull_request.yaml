@@ -74,7 +74,7 @@ jobs:
           GITHUB_TOKEN: "${{ github.token }}"
           # See: https://docs.github.com/en/developers/webhooks-and-events/webhook-events-and-payloads#webhook-payload-example-30
           PULL_REQUEST_COMMENTS_URL: "${{ github.event.pull_request.issue_url }}"
-          HUGO_BASEURL: "https://pr.texasbutterfliesmonitoring.org/${{ github.event.pull_request.number }}/"
+          RENDER_HOMEPAGE: "https://pr.texasbutterfliesmonitoring.org/${{ github.event.pull_request.number }}/index.html"
           RENDER_REPOSITORY_OWNER: "${{ github.repository_owner }}"
           RENDER_REPOSITORY_NAME: "pr.texasbutterfliesmonitoring.org"
           # This filename
@@ -91,7 +91,7 @@ jobs:
           If `hugo` encountered an error, [there may be some logs accessible here](<https://github.com/%s/%s/actions/workflows/%s?query=event%3Aworkflow_dispatch+branch%3Amain>).
           
           _note: this comment was generated automatically_' \
-              "${HUGO_BASEURL}" \
+              "${RENDER_HOMEPAGE}" \
               "${RENDER_REPOSITORY_OWNER}" \
               "${RENDER_REPOSITORY_NAME}" \
               "${WORKFLOW_FILE}" \
