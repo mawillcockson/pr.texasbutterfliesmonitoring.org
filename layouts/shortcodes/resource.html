@@ -21,4 +21,4 @@
   {{ end }}
 {{ end }}
 {{ $href = $href | relURL | safeURL }}
-<a href="{{ $href }}" target="_blank">{{ template "resourceimage" $href }}{{ $name }}</a>
+<a href="{{ $href }}" target="_blank">{{ template "resourceimage" $href }}{{ $name | markdownify | safeHTML }}</a>

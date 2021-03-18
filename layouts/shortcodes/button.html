@@ -5,4 +5,4 @@
 {{< button "%s" >}}{{< relref "another_page" >}}{{< /button >}}
 Error at: %s` (.Get 0) (.Get 0) .Position -}}
 {{- end -}}
-<a href="{{ $url }}" class="button" target="_blank"><button type="button">{{ .Get 0 }}</button></a>
+<a href="{{ $url }}" class="button" target="_blank"><button type="button">{{ .Get 0 | markdownify | safeHTML }}</button></a>
