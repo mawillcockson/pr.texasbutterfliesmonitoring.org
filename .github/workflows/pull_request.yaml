@@ -153,7 +153,7 @@ jobs:
           git init "${GITHUB_WORKSPACE}/pull_request/"
           cd "${GITHUB_WORKSPACE}/pull_request/"
           git remote add origin "https://github.com/${REPOSITORY_OF_PULL_REQUEST}.git"
-          git fetch origin "refs/pull/${PULL_REQUEST_ID}/head"
+          git fetch origin "refs/pull/${PULL_REQUEST_ID}/merge"
           git checkout FETCH_HEAD
           cd "${GITHUB_WORKSPACE}"
           mkdir -p "${DESTINATION}"
