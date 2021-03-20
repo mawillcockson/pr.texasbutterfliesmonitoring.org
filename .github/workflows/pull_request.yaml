@@ -154,7 +154,7 @@ jobs:
                       --fixed-strings \
                       "${HUGO_FILENAME}" \
                       "${CHECKSUM_FILENAME}" \
-              | sha256sum --check "${CHECKSUM_FILENAME}")
+              | sha256sum --check)
           tar -vxzf "${HUGO_DIR}/${HUGO_FILENAME}" --overwrite -C "${HUGO_DIR}"
           rm "${HUGO_DIR}/LICENSE" "${HUGO_DIR}/README.md" "${HUGO_DIR}/${HUGO_FILENAME}" "${HUGO_DIR}/${CHECKSUM_FILENAME}"
           echo "HUGO_BIN=${HUGO_DIR}/hugo" >> "${GITHUB_ENV}"
