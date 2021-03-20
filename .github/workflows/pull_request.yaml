@@ -114,23 +114,49 @@ jobs:
 
       - name: Install hugo
         shell: bash
+        env:
+          GITHUB_WORKSPACE: "${{ github.workspace }}"
         run: |
-          GITHUB_WORKSPACE=~/projects/TXButterflies.github.io/hugo
           # See: https://docs.github.com/en/rest/reference/repos#releases
-          RELEASE_BINARY_URL="$(curl --fail \
-               --silent \
-               --show-error \
-               --location \
-               'https://api.github.com/repos/gohugoio/hugo/releases' \
-               | jq -r 'map(select(.draft == false and .prerelease == false))[0]["assets"] | map(select(.name | test("^hugo_extended_\\d+\\.\\d+\\.\\d+_Linux-64bit.tar.gz$"))) | .[0].browser_download_url')"
-          mkdir -p "${GITHUB_WORKSPACE}/hugo/"
+          set -eu
+          HUGO_DIR="${GITHUB_WORKSPACE}/hugo"
+          mkdir -p "${HUGO_DIR}"
+          eval "$(curl --fail \
+              --silent \
+              --show-error \
+              --location \
+              --url 'https://api.github.com/repos/gohugo/hugo/releases/latest' \
+              | jq --compact-output --raw-output 'map(select(.draft == false and .prerelease == false))[0].assets |
+                  (
+                    map(select(.name | test("^hugo_extended_\\d+\\.\\d+\\.\\d+_Linux-64bit.tar.gz$")))[0]
+                    | ["HUGO_FILENAME='"'"'" + .name + "'"'"'", "HUGO_URL='"'"'" + .browser_download_url + "'"'"'"]
+                  )
+                  +
+                  (
+                    map(select(.name | test("^hugo_\\d+\\.\\d+\\.\\d+_checksums.txt$")))[0]
+                    | ["CHECKSUM_FILENAME='"'"'" + .name + "'"'"'", "CHECKSUM_URL='"'"'" + .browser_download_url + "'"'"'"]
+                  )
+                  | .[]')"
           curl --fail \
-               --silent \
-               --show-error \
                --location \
-               "${RELEASE_BINARY_URL}" \
-              | tar -xzf - -C "${GITHUB_WORKSPACE}/hugo/"
-          echo "HUGO_BIN=${GITHUB_WORKSPACE}/hugo/hugo" >> "${GITHUB_ENV}"
+               --url "${CHECKSUM_URL}" \
+               --output "${HUGO_DIR}/${CHECKSUM_FILENAME}" &
+          CHECKSUM_PID=$!
+          curl --fail \
+               --location \
+               --url "${HUGO_URL}" \
+               --output "${HUGO_DIR}/${HUGO_FILENAME}" &
+          HUGO_PID=$!
+          wait "${CHECKSUM_PID}" "${HUGO_PID}"
+          (cd "${HUGO_DIR}" \
+              && grep --no-messages \
+                      --no-filename \
+                      --fixed-strings \
+                      "${HUGO_FILENAME}" \
+              | sha256sum --check "${CHECKSUM_FILENAME}")
+          tar -vxzf "${HUGO_DIR}/${HUGO_FILENAME}" --overwrite -C "${HUGO_DIR}"
+          rm "${HUGO_DIR}/LICENSE" "${HUGO_DIR}/README.md" "${HUGO_DIR}/${HUGO_FILENAME}" "${HUGO_DIR}/${CHECKSUM_FILENAME}"
+          echo "HUGO_BIN=${HUGO_DIR}/hugo" >> "${GITHUB_ENV}"
 
       - name: Render pull request
         shell: bash
