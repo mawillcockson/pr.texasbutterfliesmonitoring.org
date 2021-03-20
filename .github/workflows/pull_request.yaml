@@ -57,13 +57,13 @@ jobs:
           }' \
               --arg github_ref "${GITHUB_REF}" \
               --arg pull_request_id "${PULL_REQUEST_ID}" \
-              | curl \
+          | curl \
               --request POST \
               --header "Accept: application/vnd.github.v3+json" \
               --user "${PULL_REQUEST_USER}:${PULL_REQUEST_TOKEN}" \
               --post301 --post302 --post303 \
               --data "@-" \
-              'https://api.github.com/repos/TXButterflies/pr.texasbutterfliesmonitoring.org/actions/workflows/pull_request.yaml/dispatches'
+              --url 'https://api.github.com/repos/TXButterflies/pr.texasbutterfliesmonitoring.org/actions/workflows/pull_request.yaml/dispatches'
 
       - name: Make Comment
         shell: bash
@@ -81,13 +81,13 @@ jobs:
           set -eu
           printf \
           'The changes in this pull request have been submitted to be included in a demo version of the site.
-                    
+
           If [`hugo`](https://gohugo.io/) can build this pull request, [then that build can be viewed here, once the build is finished](%s).
 
           If you have visited the above link before, you may have to refresh your browser to see the changes. This is due to browsers caching data from websites. [This link has more information about this](https://refreshyourcache.com/en/cache/).
-          
+
           If `hugo` encountered an error, [there may be some logs accessible here](<https://github.com/%s/%s/actions/workflows/%s?query=event%3Aworkflow_dispatch+branch%3Amain>).
-          
+
           _note: this comment was generated automatically_' \
               "${RENDER_HOMEPAGE}" \
               "${RENDER_REPOSITORY_OWNER}" \
