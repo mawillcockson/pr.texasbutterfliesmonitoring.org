@@ -49,9 +49,7 @@ jobs:
           PULL_REQUEST_TOKEN: "${{ secrets.PULL_REQUEST_TOKEN }}"
         run: |
           set -eu
-          # jq requires input
-          echo "{}" \
-              | jq --compact-output '{
+          jq --null-input --compact-output '{
               "ref": $github_ref,
               "inputs": {
                   "pull_request_id": $pull_request_id,
