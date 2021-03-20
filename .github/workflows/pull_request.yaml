@@ -126,7 +126,7 @@ jobs:
               --show-error \
               --location \
               --url 'https://api.github.com/repos/gohugoio/hugo/releases/latest' \
-              | jq --compact-output --raw-output 'map(select(.draft == false and .prerelease == false))[0].assets |
+              | jq --compact-output --raw-output '.assets |
                   (
                     map(select(.name | test("^hugo_extended_\\d+\\.\\d+\\.\\d+_Linux-64bit.tar.gz$")))[0]
                     | ["HUGO_FILENAME='"'"'" + .name + "'"'"'", "HUGO_URL='"'"'" + .browser_download_url + "'"'"'"]
