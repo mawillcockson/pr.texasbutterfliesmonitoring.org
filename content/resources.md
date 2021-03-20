@@ -13,11 +13,19 @@ linktitle = "Resources"
 - {{< resource "Route Information" "/Route Information.pdf" >}}
 - {{< resource "Using PollardBase" "/Using PollardBase.pdf" >}}
 
-## Live Q&A Sessions
+## Live Q&A Sessions for New Monitors
 
-- Thur, Mar 18th 12 noon to 12:30 pm CDT  
-<https://us04web.zoom.us/j/75029915171?pwd=aWxvNzh3VFcxRkx3dkpocWNOY1lNQT09>  
-Meeting ID: 750 2991 5171
+- Tue, Apr 6th 7:30 - 8:00 pm CDT  
+https://us04web.zoom.us/j/74793496694?pwd=aHF1YXg2M2ZIYnp4OHNzZjZEWGtUZz09  
+Meeting ID: 747 9349 6694
+
+## Optional Check In for Monitors and Scribes who have a route in Pollardbase
+
+- Thu, Apr 22nd, 7:30 - 8:00 pm  
+https://us04web.zoom.us/j/75861447083?pwd=dEhVRHNocVJyckEvMEtTbmZ6WjFTZz09  
+Meeting ID: 758 6144 7083
+
+If no one comes to this meeting in the first 10 minutes, I will end the meeting.
 
 ## Identification Resources
 
