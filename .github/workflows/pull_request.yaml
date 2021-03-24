@@ -74,13 +74,15 @@ jobs:
         run: |
           set -eu
           printf \
-          'The changes in this pull request have been submitted to be included in a demo version of the site.
-                    
-          If [`hugo`](https://gohugo.io/) can build this pull request, [then that build can be viewed here, once the build is finished](%s).
+          '# DO NOT MERGE BEFORE PREVIEWING THE CHANGES
+
+          [Preview the changes at this link.](%s)
 
           If you have visited the above link before, you may have to refresh your browser to see the changes. This is due to browsers caching data from websites. [This link has more information about this](https://refreshyourcache.com/en/cache/).
-          
-          If `hugo` encountered an error, [there may be some logs accessible here](<https://github.com/%s/%s/actions/workflows/%s?query=event%3Aworkflow_dispatch+branch%3Amain>).
+
+          If the preview looks fine, you can merge the pull request.
+
+          If the preview is not fine, or not available, [there are logs available at this link.](<https://github.com/%s/%s/actions/workflows/%s?query=event%3Aworkflow_dispatch+branch%3Amain>)
           
           _note: this comment was generated automatically_' \
               "${RENDER_HOMEPAGE}" \
