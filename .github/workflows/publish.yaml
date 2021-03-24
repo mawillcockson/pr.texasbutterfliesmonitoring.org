@@ -52,7 +52,7 @@ jobs:
           SOURCE: "${{ github.workspace }}/main/"
           DESTINATION: "${{ github.workspace }}/gh-pages/"
         run: |
-        set -eu
+          set -eu
           git config --global user.name "${ACTIONS_USERNAME}"
           git config --global user.email "${ACTIONS_EMAIL}"
           cd "${GITHUB_WORKSPACE}/gh-pages/"
