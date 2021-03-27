@@ -18,7 +18,10 @@
 
   <body>
     <header>{{ block "header" . }}{{ partial "header.html" .}}{{ end }}</header>
-    <main role="main">{{ block "main" . }}{{ end }}</main>
+    <main role="main">
+        {{ block "heading" . }}{{ with .Title }}<h1 class="title">{{ . }}</h1>{{ end }}{{ end }}
+        {{ block "main" . }}{{ end }}
+    </main>
     <footer>{{ block "footer" . }}{{ partial "footer.html" . }}{{ end }}</footer>
   </body>
 </html>
