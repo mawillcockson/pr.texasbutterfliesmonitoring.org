@@ -13,6 +13,11 @@ linktitle = "Resources"
 - {{< resource "Route Information" "/Route Information.pdf" >}}
 - {{< resource "Using PollardBase" "/Using PollardBase.pdf" >}}
 
+## Live Q&A on using Google Earth to document a route
+- Sun, Mar 28th, 3 pm
+ https://zoom.us/j/95065570306?pwd=b3NhSTBLV0dmeERhWDJxUUpGYURydz09
+
+
 ## Live Q&A Sessions for New Monitors
 
 - Tue, Apr 6th 7:30 - 8:00 pm CDT  
