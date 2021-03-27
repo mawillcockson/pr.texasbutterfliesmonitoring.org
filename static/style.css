@@ -46,8 +46,9 @@ header,
 header a,
 footer,
 footer a {
-    /* Because of sanitize.css included in the baseof.html template, the text
-     * color has to be explicitly set on the a tags
+    /* The text color has to be explicitly set on the a tags, because the
+     * cascade to children of header and footer tags is overridden because of
+     * sanitize.css included in the baseof.html template
      */
     color: var(--nav-text-color);
 }
