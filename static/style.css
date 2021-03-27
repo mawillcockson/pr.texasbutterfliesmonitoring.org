@@ -14,13 +14,17 @@ html, body {
     font-family: sans-serif;
 }
 
+li {
+    display: list-item;
+}
+
 body {
     height: 100vh;
     display: flex;
     flex-flow: column nowrap;
 }
 
-nav > ul {
+header > nav > ul {
     margin: 0;
     padding: 0;
     display: flex;
@@ -28,7 +32,7 @@ nav > ul {
     background-color: var(--banner-color);
 }
 
-nav > ul > li {
+header > nav > ul > li {
     margin: 0;
     padding: 0;
     border-right: inset 0.1em var(--nav-separator-color);
@@ -37,7 +41,7 @@ nav > ul > li {
     text-align: center;
 }
 
-nav a {
+header > nav a {
     font-size: var(--nav-font-size);
     padding: 1em 1em;
 }
@@ -91,23 +95,26 @@ footer {
     text-align: right;
 }
 
-@media screen and (max-width: 30em) {
-    nav > ul {
+/* NOTE: this breakpoint needs to adjust with the number of tabs in the header
+ * this will likely require javascript
+ */
+@media screen and (max-width: 40em) {
+    header > nav > ul {
         flex-flow: column nowrap;
     }
 
-    nav > ul > li {
+    header > nav > ul > li {
         border: 0 black;
         border-bottom: inset 0.1em var(--nav-separator-color);
         width: 100%;
     }
 
-    nav a {
+    header > nav a {
         width: 100%;
         text-align: left;
     }
 
-    nav > ul > li:last-child {
+    header > nav > ul > li:last-child {
         border: 0 black;
     }
 
@@ -206,4 +213,40 @@ button {
         max-width: 100%;
         float: none;
     }
+}
+
+nav#TableOfContents ul,
+nav#TableOfContents ol {
+    margin-left: 1.5em;
+    list-style-position: inside;
+}
+
+/* don't indent the first level of the list */
+nav#TableOfContents > ul,
+nav#TableOfContents > ol {
+    margin: 0;
+}
+
+nav#TableOfContents > ol {
+    list-style-type: decimal;
+}
+
+nav#TableOfContents > ul {
+    list-style-type: disc;
+}
+
+nav#TableOfContents > ol > li > ol {
+    list-style-type: lower-alpha;
+}
+
+nav#TableOfContents > ul > li > ul {
+    list-style-type: circle;
+}
+
+nav#TableOfContents > ol > li > ol > li > ol {
+    list-style-type: lower-roman;
+}
+
+nav#TableOfContents > ul > li > ul > li > ul {
+    list-style-type: square;
 }

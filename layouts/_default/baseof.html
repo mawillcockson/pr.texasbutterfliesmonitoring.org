@@ -21,6 +21,7 @@
     <main role="main">
         {{ block "heading" . }}{{ with .Title }}<h1 class="title">{{ . }}</h1>{{ end }}{{ end }}
         {{- block "main" . -}}
+          {{ if .Params.toc }}{{ .TableOfContents }}{{ end }}
           {{ .Content }}
         {{- end -}}
     </main>
