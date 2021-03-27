@@ -53,6 +53,12 @@ footer a {
     color: var(--nav-text-color);
 }
 
+/* Swap colors for active navigation element */
+li.active, li.active > a {
+    background-color: var(--nav-text-color);
+    color: var(--banner-color);
+}
+
 header a {
     text-decoration: none;
 }
