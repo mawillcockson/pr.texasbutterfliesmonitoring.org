@@ -1,6 +1,5 @@
 +++
 title = "Spring 2021 Newsletter"
-linktitle = "Newsletter"
 +++
 
 Welcome to the 2021 Butterfly Monitoring Season!  Whether you're brand new to butterfly monitoring or have monitored your route for some time, welcome!

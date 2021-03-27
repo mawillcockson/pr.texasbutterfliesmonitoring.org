@@ -1,6 +1,5 @@
 +++
-# NOTE: Empty heading is necessary, otherwise hugo fails to build, due to a
-# shortcode beginning the file
+linktitle = "Home"
 +++
 
 {{< image alt="The Texas Butterfly Monitoring Network Logo" src="/logo_text.png" class="logo" >}}

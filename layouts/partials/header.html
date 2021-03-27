@@ -1,9 +1,11 @@
 <nav>
     <ul>
-        <li><a {{ if .IsHome }}class="active"{{ end }} href="{{ if .IsHome }}{{ safeURL `#` }}{{ else }}{{ .Site.Home.RelPermalink }}{{ end }}">Home</a></li>
+        <li {{ if .IsHome }}class="active"{{ end }}><a href="{{ if .IsHome }}{{ safeURL `#` }}{{ else }}{{ .Site.Home.RelPermalink }}{{ end }}">{{ site.Home.Params.linktitle }}</a></li>
         {{ $currentPage := . }}
         {{ range .Site.RegularPages }}
-        <li><a {{ if $currentPage | eq . }}class="active"{{ end }} href="{{ if $currentPage | eq . }}{{ safeURL `#` }}{{ else }}{{ .RelPermalink }}{{ end }}">{{- .LinkTitle -}}</a></li>
+          {{ if not .IsHome }}
+        <li {{ if $currentPage | eq . }}class="active"{{ end }}><a href="{{ if $currentPage | eq . }}{{ safeURL `#` }}{{ else }}{{ .RelPermalink }}{{ end }}">{{- partial "title.html" . -}}</a></li>
+          {{ end }}
         {{ end }}
     </ul>
 </nav>

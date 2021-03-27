@@ -1,6 +1,5 @@
 +++
 title = "Resources for Monitors"
-linktitle = "Resources"
 +++
 
 - {{< resource "PollardBase" "https://www.pollardbase.org/" >}}
