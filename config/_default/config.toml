@@ -4,3 +4,4 @@ languageCode = "en-us"
 title = "Texas Butterfly Monitoring Network"
 copyright = """Copyright © 2021 Texas Butterfly Monitoring Network"""
 disableKinds = ["taxonomy", "term"]
+relativeURLs = true
