@@ -2,13 +2,13 @@
 title = "Resources for Monitors"
 +++
 
-- {{< resource "PollardBase" "https://www.pollardbase.org/" >}}
+## Resources for Monitors
+
+- {{< resource "PollardBase website" "https://www.pollardbase.org/" >}}
 - {{< resource "Creating a Route with Google Earth" "/Creating a Route with Google Earth.pdf" >}}
 - {{< resource "Creating a Route with Google Maps" "/Creating a Route with Google Maps.pdf" >}}
 - {{< resource "Recording Data in Pollardbase" "/Recording Data in Pollardbase.pdf" >}}
 - {{< resource "TBMN Data Sheet" "/TBMN Data Sheet.pdf" >}}
-- {{< resource "Route Information" "/Route Information.pdf" >}}
-- {{< resource "Using PollardBase" "/Using PollardBase.pdf" >}}
 
 ## Live Q&A on using Google Earth to document a route
 - Sun, Mar 28th, 3 pm
