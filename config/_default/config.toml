@@ -3,7 +3,13 @@ baseURL = "https://texasbutterfliesmonitoring.org/"
 languageCode = "en-us"
 title = "Texas Butterfly Monitoring Network"
 copyright = """Copyright © 2021 Texas Butterfly Monitoring Network"""
-disableKinds = ["taxonomy", "term"]
+disableKinds = [
+    "taxonomy",
+    "term",
+    "section",
+    "RSS",
+]
+publishDir = "generated_website"
 pathWarnings = true
 [markup]
   [markup.tableOfContents]
