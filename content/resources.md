@@ -2,8 +2,6 @@
 title = "Resources for Monitors"
 +++
 
-## Resources for Monitors
-
 - {{< resource "PollardBase website" "https://www.pollardbase.org/" >}}
 - {{< resource "Creating a Route with Google Earth" "/Creating a Route with Google Earth.pdf" >}}
 - {{< resource "Creating a Route with Google Maps" "/Creating a Route with Google Maps.pdf" >}}
