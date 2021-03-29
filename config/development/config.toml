@@ -3,3 +3,4 @@
 verbose = true
 verboseLog = true
 minify = false
+baseURL = "http://localhost/preview"
