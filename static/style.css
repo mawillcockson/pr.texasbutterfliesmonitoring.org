@@ -1,10 +1,139 @@
 :root {
-    --banner-color: rgb(51, 51, 51);
     --main-color: white;
-    --nav-text-color: lightgrey;
-    --nav-separator-color: lightgrey;
+
+    --banner-color-hue: 0;
+    --banner-color-saturation: 0%;
+    --banner-color-luminance: 20%;
+    --banner-color: hsl(
+        var(--banner-color-hue),
+        var(--banner-color-saturation),
+        var(--banner-color-luminance)
+    );
+
+    --nav-text-color-hue: 0;
+    --nav-text-color-saturation: 0%;
+    --nav-text-color-luminance: 83%;
+    --nav-text-color: hsl(
+        var(--nav-text-color-hue),
+        var(--nav-text-color-saturation),
+        var(--nav-text-color-luminance)
+    );
+
+    /* Lighten background for hovered navigation element */
+    --banner-hover-color-lighten: 18%;
+    --banner-hover-color-hue:        var(--banner-color-hue);
+    --banner-hover-color-saturation: var(--banner-color-saturation);
+    --banner-hover-color-luminance:  calc(var(--banner-color-luminance) + var(--banner-hover-color-lighten));
+    --banner-hover-color: hsl(
+        var(--banner-hover-color-hue),
+        var(--banner-hover-color-saturation),
+        var(--banner-hover-color-luminance)
+    );
+
+    --nav-text-hover-lighten: var(--banner-hover-color-lighten);
+    --nav-text-hover-color-hue:        var(--nav-text-color-hue);
+    --nav-text-hover-color-saturation: var(--nav-text-color-saturation);
+    --nav-text-hover-color-luminance:  calc(var(--nav-text-color-luminance) + var(--nav-text-hover-lighten));
+    --nav-text-hover-color: hsl(
+        var(--nav-text-hover-color-hue),
+        var(--nav-text-hover-color-saturation),
+        var(--nav-text-hover-color-luminance)
+    );
+
+    /* Darken slightly when link navigation element is selected */
+    --banner-active-color-lighten: -10%;
+    --banner-active-color-hue:        var(--banner-hover-color-hue);
+    --banner-active-color-saturation: var(--banner-hover-color-saturation);
+    --banner-active-color-luminance:  calc(var(--banner-hover-color-luminance) + var(--banner-active-color-lighten));
+    --banner-active-color: hsl(
+        var(--banner-active-color-hue),
+        var(--banner-active-color-saturation),
+        var(--banner-active-color-luminance)
+    );
+
+    --nav-text-active-color-lighten: var(--banner-active-color-lighten);
+    --nav-text-active-color-hue:        var(--nav-text-hover-color-hue);
+    --nav-text-active-color-saturation: var(--nav-text-hover-color-saturation);
+    --nav-text-active-color-luminance:  calc(var(--nav-text-hover-color-luminance) + var(--nav-text-active-color-lighten));
+    --nav-text-active-color: hsl(
+        var(--nav-text-active-color-hue),
+        var(--nav-text-active-color-saturation),
+        var(--nav-text-active-color-luminance)
+    );
+
+    --nav-separator-color-hue: 0;
+    --nav-separator-color-saturation: 0%;
+    --nav-separator-color-luminance: 83%;
+    --nav-separator-color: hsl(
+        var(--nav-separator-color-hue),
+        var(--nav-separator-color-saturation),
+        var(--nav-separator-color-luminance)
+    );
+
+    /* Swap colors for current navigation element */
+    --nav-text-current-color-hue:        var(--banner-color-hue);
+    --nav-text-current-color-saturation: var(--banner-color-saturation);
+    --nav-text-current-color-luminance:  var(--banner-color-luminance);
+    --nav-text-current-color: hsl(
+        var(--nav-text-current-color-hue),
+        var(--nav-text-current-color-saturation),
+        var(--nav-text-current-color-luminance)
+    );
+    --banner-current-color-hue:        var(--nav-text-color-hue);
+    --banner-current-color-saturation: var(--nav-text-color-saturation);
+    --banner-current-color-luminance:  var(--nav-text-color-luminance);
+    --banner-current-color: hsl(
+        var(--banner-current-color-hue),
+        var(--banner-current-color-saturation),
+        var(--banner-current-color-luminance)
+    );
+
+    --nav-text-current-hover-lighten: 13%;
+    --nav-text-current-hover-color-hue:        var(--nav-text-current-color-hue);
+    --nav-text-current-hover-color-saturation: var(--nav-text-current-color-saturation);
+    --nav-text-current-hover-color-luminance:  calc(var(--nav-text-current-color-luminance) + var(--nav-text-current-hover-lighten));
+    --nav-text-current-hover-color: hsl(
+        var(--nav-text-current-hover-color-hue),
+        var(--nav-text-current-hover-color-saturation),
+        var(--nav-text-current-hover-color-luminance)
+    );
+
+    --banner-current-hover-color-lighten: var(--nav-text-current-hover-lighten);
+    --banner-current-hover-color-hue:        var(--banner-current-color-hue);
+    --banner-current-hover-color-saturation: var(--banner-current-color-saturation);
+    --banner-current-hover-color-luminance:  calc(var(--banner-current-color-luminance) + var(--banner-current-hover-color-lighten));
+    --banner-current-hover-color: hsl(
+        var(--banner-current-hover-color-hue),
+        var(--banner-current-hover-color-saturation),
+        var(--banner-current-hover-color-luminance)
+    );
+
+    --banner-current-active-color-lighten: -10%;
+    --banner-current-active-color-hue:        var(--banner-current-hover-color-hue);
+    --banner-current-active-color-saturation: var(--banner-current-hover-color-saturation);
+    --banner-current-active-color-luminance:  calc(var(--banner-current-hover-color-luminance) + var(--banner-current-active-color-lighten));
+    --banner-current-active-color: hsl(
+        var(--banner-current-active-color-hue),
+        var(--banner-current-active-color-saturation),
+        var(--banner-current-active-color-luminance)
+    );
+
+    --nav-text-current-active-color-lighten: var(--banner-current-active-color-lighten);
+    --nav-text-current-active-color-hue:        var(--nav-text-current-hover-color-hue);
+    --nav-text-current-active-color-saturation: var(--nav-text-current-hover-color-saturation);
+    --nav-text-current-active-color-luminance:  calc(var(--nav-text-current-hover-color-luminance) + var(--nav-text-current-active-color-lighten));
+    --nav-text-current-active-color: hsl(
+        var(--nav-text-current-active-color-hue),
+        var(--nav-text-current-active-color-saturation),
+        var(--nav-text-current-active-color-luminance)
+    );
+
     --nav-font-size: 1.1em;
     --footer-font-size: 0.8em;
+
+    /* NOTE: not able to be used anywhere, just a reminder as the the
+     * breakpoint for layout changes
+     */
     --skinny-device-width: 30em;
 }
 
@@ -14,13 +143,17 @@ html, body {
     font-family: sans-serif;
 }
 
+li {
+    display: list-item;
+}
+
 body {
     height: 100vh;
     display: flex;
     flex-flow: column nowrap;
 }
 
-nav > ul {
+header > nav > ul {
     margin: 0;
     padding: 0;
     display: flex;
@@ -28,7 +161,7 @@ nav > ul {
     background-color: var(--banner-color);
 }
 
-nav > ul > li {
+header > nav > ul > li {
     margin: 0;
     padding: 0;
     border-right: inset 0.1em var(--nav-separator-color);
@@ -37,7 +170,7 @@ nav > ul > li {
     text-align: center;
 }
 
-nav a {
+header > nav a {
     font-size: var(--nav-font-size);
     padding: 1em 1em;
 }
@@ -46,10 +179,49 @@ header,
 header a,
 footer,
 footer a {
-    /* Because of sanitize.css included in the baseof.html template, the text
-     * color has to be explicitly set on the a tags
+    /* The text color has to be explicitly set on the a tags, because the
+     * cascade to children of header and footer tags is overridden because of
+     * sanitize.css included in the baseof.html template
      */
     color: var(--nav-text-color);
+}
+
+header li:hover,
+header li:focus,
+header li:focus-visible,
+header li > a:hover,
+header li > a:focus,
+header li > a:focus-visible {
+    background-color: var(--banner-hover-color);
+    color: var(--nav-text-hover-color);
+}
+
+header li:active,
+header li > a:active {
+    background-color: var(--banner-active-color);
+    color: var(--nav-text-active-color);
+}
+
+header li.current,
+header li.current > a {
+    background-color: var(--banner-current-color);
+    color: var(--nav-text-current-color);
+}
+
+header li.current:hover,
+header li.current:focus,
+header li.current:focus-visible,
+header li.current > a:hover,
+header li.current > a:focus,
+header li.current > a:focus-visible {
+    background-color: var(--banner-current-hover-color);
+    color: var(--nav-text-current-hover-color);
+}
+
+header li.current:active,
+header li.current > a:active {
+    background-color: var(--banner-current-active-color);
+    color: var(--nav-text-current-active-color);
 }
 
 header a {
@@ -84,23 +256,26 @@ footer {
     text-align: right;
 }
 
-@media screen and (max-width: 30em) {
-    nav > ul {
+/* NOTE: this breakpoint needs to adjust with the number of tabs in the header
+ * this will likely require javascript
+ */
+@media screen and (max-width: 40em) {
+    header > nav > ul {
         flex-flow: column nowrap;
     }
 
-    nav > ul > li {
+    header > nav > ul > li {
         border: 0 black;
         border-bottom: inset 0.1em var(--nav-separator-color);
         width: 100%;
     }
 
-    nav a {
+    header > nav a {
         width: 100%;
         text-align: left;
     }
 
-    nav > ul > li:last-child {
+    header > nav > ul > li:last-child {
         border: 0 black;
     }
 
@@ -108,32 +283,19 @@ footer {
         flex-flow: column wrap;
     }
 
-    .left-footer {
+    .left-footer, .right-footer {
         justify-content: center;
+        text-align: center;
     }
 
     .right-footer {
         padding-top: 0;
-        justify-content: center;
     }
 }
 
 main {
     flex: 1 1 auto;
     padding: 2em;
-}
-
-.iframe-container {
-    position: relative;
-    width: 100%;
-}
-
-.iframe-container > iframe {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
 }
 
 picture > img {
@@ -179,6 +341,7 @@ button {
     }
 }
 
+/* floats for image shortcode */
 .right, .left {
     max-width: calc(100% / 3);
 }
@@ -192,6 +355,7 @@ button {
     float: left;
     margin-right: 2em;
 }
+/* floats for image shortcode */
 
 @media screen and (max-width: 30em) {
     .right, .left {
@@ -199,4 +363,40 @@ button {
         max-width: 100%;
         float: none;
     }
+}
+
+nav#TableOfContents ul,
+nav#TableOfContents ol {
+    margin-left: 1.5em;
+    list-style-position: inside;
+}
+
+/* don't indent the first level of the list */
+nav#TableOfContents > ul,
+nav#TableOfContents > ol {
+    margin: 0;
+}
+
+nav#TableOfContents > ol {
+    list-style-type: decimal;
+}
+
+nav#TableOfContents > ul {
+    list-style-type: disc;
+}
+
+nav#TableOfContents > ol > li > ol {
+    list-style-type: lower-alpha;
+}
+
+nav#TableOfContents > ul > li > ul {
+    list-style-type: circle;
+}
+
+nav#TableOfContents > ol > li > ol > li > ol {
+    list-style-type: lower-roman;
+}
+
+nav#TableOfContents > ul > li > ul > li > ul {
+    list-style-type: square;
 }

@@ -1,6 +1,5 @@
 +++
 title = "Resources for Monitors"
-linktitle = "Resources"
 +++
 
 ## Resources for Monitors

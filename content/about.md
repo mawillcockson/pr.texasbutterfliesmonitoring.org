@@ -1,6 +1,5 @@
 +++
 title = "About the Texas Butterfly Monitoring Network"
-linktitle = "About"
 +++
 
 {{< image alt="Fiery Skipper" src="/Fiery Skipper.jpg" side="left" >}}

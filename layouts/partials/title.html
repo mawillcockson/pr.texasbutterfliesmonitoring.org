@@ -1,0 +1,5 @@
+{{- with .Params.linktitle -}}
+  {{- . -}}
+{{- else -}}
+  {{- .File.TranslationBaseName | title -}}
+{{- end }}
