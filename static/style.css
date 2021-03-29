@@ -283,13 +283,13 @@ footer {
         flex-flow: column wrap;
     }
 
-    .left-footer {
+    .left-footer, .right-footer {
         justify-content: center;
+        text-align: center;
     }
 
     .right-footer {
         padding-top: 0;
-        justify-content: center;
     }
 }
 
