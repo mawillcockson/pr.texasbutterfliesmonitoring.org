@@ -174,6 +174,7 @@ jobs:
           REPOSITORY_OF_PULL_REQUEST: "TXButterflies/TXButterflies.github.io"
           SOURCE: "${{ github.workspace }}/pull_request/"
           DESTINATION: "${{ github.workspace }}/gh-pages/${{ github.event.inputs.pull_request_id }}"
+          HUGO_ENVIRONMENT: development
         run: |
           set -eu
           git config --global user.name "${ACTIONS_USERNAME}"
