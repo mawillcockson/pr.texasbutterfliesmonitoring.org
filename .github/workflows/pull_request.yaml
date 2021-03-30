@@ -25,6 +25,11 @@ on:
           The number assigned to the pull request. See:
           https://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/checking-out-pull-requests-locally#modifying-an-inactive-pull-request-locally
         required: true
+      pull_request_event:
+        description: |
+          The whole event payload. See:
+          https://docs.github.com/en/developers/webhooks-and-events/webhook-events-and-payloads#webhook-payload-example-32
+        required: false
 
 jobs:
   dispatch:
@@ -51,10 +56,12 @@ jobs:
           RENDER_REPOSITORY_NAME: "pr.texasbutterfliesmonitoring.org"
         run: |
           set -eu
-          jq --null-input --compact-output '{
+          cat "${GITHUB_EVENT_PATH}" \
+          | jq --compact-output '{
               "ref": $github_ref,
               "inputs": {
                   "pull_request_id": $pull_request_id,
+                  "pull_request_event": .,
               }
           }' \
               --arg github_ref "${GITHUB_REF}" \
@@ -123,7 +130,7 @@ jobs:
         run: |
           # See: https://docs.github.com/en/rest/reference/repos#releases
           set -eu
-          HUGO_DIR="${GITHUB_WORKSPACE}/hugo"
+          HUGO_DIR="${GITHUB_WORKSPACE:-$(pwd)}/hugo"
           mkdir -p "${HUGO_DIR}"
           eval "$(curl --fail \
               --silent \
@@ -184,6 +191,11 @@ jobs:
           git remote add origin "https://github.com/${REPOSITORY_OF_PULL_REQUEST}.git"
           git fetch origin "refs/pull/${PULL_REQUEST_ID}/merge"
           git checkout FETCH_HEAD
+          # Add pull_request event payload to the data dir so that hugo can access it
+          if cat "${GITHUB_EVENT_PATH}" | jq -e '.inputs | has("pull_request_event")' > /dev/null 2>&1; then
+              mkdir -p ./data/
+              cat "${GITHUB_EVENT_PATH}" | jq --compact-output '.inputs.pull_request_event' > ./data/pull_request.json
+          fi
           cd "${GITHUB_WORKSPACE}"
           mkdir -p "${DESTINATION}"
           "${HUGO_BIN}" env --source "${SOURCE}"
