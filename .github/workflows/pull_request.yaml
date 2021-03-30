@@ -47,6 +47,8 @@ jobs:
           # workflow_dispatch events in the rendering repository.
           PULL_REQUEST_USER: "${{ secrets.PULL_REQUEST_USER }}"
           PULL_REQUEST_TOKEN: "${{ secrets.PULL_REQUEST_TOKEN }}"
+          RENDER_REPOSITORY_OWNER: "${{ github.repository_owner }}"
+          RENDER_REPOSITORY_NAME: "pr.texasbutterfliesmonitoring.org"
         run: |
           set -eu
           jq --null-input --compact-output '{
@@ -63,7 +65,7 @@ jobs:
               --user "${PULL_REQUEST_USER}:${PULL_REQUEST_TOKEN}" \
               --post301 --post302 --post303 \
               --data "@-" \
-              --url 'https://api.github.com/repos/TXButterflies/pr.texasbutterfliesmonitoring.org/actions/workflows/pull_request.yaml/dispatches'
+              --url "https://api.github.com/repos/${RENDER_REPOSITORY_OWNER}/${RENDER_REPOSITORY_NAME}/actions/workflows/pull_request.yaml/dispatches"
 
       - name: Make Comment
         shell: bash
@@ -80,14 +82,16 @@ jobs:
         run: |
           set -eu
           printf \
-          'The changes in this pull request have been submitted to be included in a demo version of the site.
+          '# DO NOT MERGE BEFORE PREVIEWING THE CHANGES
 
-          If [`hugo`](https://gohugo.io/) can build this pull request, [then that build can be viewed here, once the build is finished](%s).
+          [Preview the changes at this link.](%s)
 
           If you have visited the above link before, you may have to refresh your browser to see the changes. This is due to browsers caching data from websites. [This link has more information about this](https://refreshyourcache.com/en/cache/).
 
-          If `hugo` encountered an error, [there may be some logs accessible here](<https://github.com/%s/%s/actions/workflows/%s?query=event%3Aworkflow_dispatch+branch%3Amain>).
+          If the preview looks fine, you can merge the pull request.
 
+          If the preview is not fine, or not available, [there are logs available at this link.](<https://github.com/%s/%s/actions/workflows/%s?query=event%3Aworkflow_dispatch+branch%3Amain>)
+          
           _note: this comment was generated automatically_' \
               "${RENDER_HOMEPAGE}" \
               "${RENDER_REPOSITORY_OWNER}" \
