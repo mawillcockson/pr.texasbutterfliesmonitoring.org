@@ -52,6 +52,9 @@ cd ../
 
 tar -vxzf "${HUGO_DIR}/${HUGO_FILENAME}" --overwrite -C "${HUGO_DIR}"
 
+HUGO_BIN="${HUGO_DIR}/hugo"
+export HUGO_BIN
+
 rm \
     "${HUGO_DIR}/hugo_releases.json" \
     "${HUGO_DIR}/environment_variables.sh" \
@@ -60,4 +63,8 @@ rm \
     "${HUGO_DIR}/${HUGO_FILENAME}" \
     "${HUGO_DIR}/${CHECKSUM_FILENAME}"
 
-echo "HUGO_BIN=${HUGO_DIR}/hugo" >> "${GITHUB_ENV}"
+if [ "${CI:-"false"}" = "true" ]; then
+    echo "HUGO_BIN=${HUGO_DIR}/hugo" >> "${GITHUB_ENV}"
+else
+    echo "Hugo installed to ${HUGO_BIN}"
+fi

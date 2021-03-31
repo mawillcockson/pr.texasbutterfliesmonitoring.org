@@ -40,6 +40,7 @@ jobs:
       - name: Run script to trigger GitHub Action workflow in other repository
         shell: bash
         env:
+          PULL_REQUEST_ID: "${{ github.event.pull_request.number }}"
           GITHUB_EVENT: "${{ github.event }}"
           GITHUB_REF: "${{ env.GITHUB_REF }}"
           RENDER_REPOSITORY_TOKEN_USER: "${{ secrets.PULL_REQUEST_USER }}"
@@ -50,9 +51,8 @@ jobs:
       - name: Make Comment
         shell: bash
         env:
-          PREVIEW_URL: "https://pr.texasbutterfliesmonitoring.org/${{ github.event.pull_request.number }}/index.html"
+          PREVIEW_URL: "https://pr.texasbutterfliesmonitoring.org/${{ github.event.pull_request.number }}"
           RENDER_REPOSITORY: "${{ github.repository_owner }}/pr.texasbutterfliesmonitoring.org"
-          WORKFLOW_FILE: "pull_request.yaml"
           GITHUB_TOKEN: "${{ github.token }}"
           PULL_REQUEST_COMMENTS_URL: "${{ github.event.pull_request.issue_url }}"
         run: curl -fsSL "https://github.com/${RENDER_REPOSITORY}/raw/main/comment.sh" | sh
@@ -62,12 +62,6 @@ jobs:
     runs-on: ubuntu-latest
     if: "${{ github.event_name == 'workflow_dispatch' }}"
     steps:
-      - name: Checkout gh-pages branch
-        uses: actions/checkout@v2
-        with:
-          ref: gh-pages
-          path: gh-pages/
-
       - name: Install hugo
         shell: bash
         env:
@@ -77,14 +71,13 @@ jobs:
       - name: Render pull request
         shell: bash
         env:
-          GIT_USER_NAME: "github-actions"
-          GIT_USER_EMAIL: "41898282+github-actions[bot]@users.noreply.github.com"
+          GITHUB_TOKEN: "${{ github.token }}"
           REPOSITORY_OF_PULL_REQUEST: "TXButterflies/TXButterflies.github.io"
           PULL_REQUEST_ID: "${{ github.event.inputs.pull_request_id }}"
+          GITHUB_EVENT: "${{ github.event.inputs.pull_request_event }}"
           DESTINATION: "${{ github.workspace }}/gh-pages/${{ github.event.inputs.pull_request_id }}"
-          SOURCE: "${{ github.workspace }}/pull_request/"
           HUGO_BASEURL: "https://pr.texasbutterfliesmonitoring.org/${{ github.event.inputs.pull_request_id }}/"
           HUGO_ENVIRONMENT: development
-          RENDER_REPOSITORY: "${{ github.repository_owner }}/pr.texasbutterfliesmonitoring.org"
+          GH_PAGES_REPOSITORY: "${{ github.repository_owner }}/pr.texasbutterfliesmonitoring.org"
         run: curl -fsSL "https://github.com/${RENDER_REPOSITORY}/raw/main/render_and_push.sh" | sh
 ...
