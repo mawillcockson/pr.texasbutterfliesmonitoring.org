@@ -40,79 +40,22 @@ jobs:
       - name: Run script to trigger GitHub Action workflow in other repository
         shell: bash
         env:
-          # Pull Request payload example:
-          # https://docs.github.com/en/developers/webhooks-and-events/webhook-events-and-payloads#pull_request
-          PULL_REQUEST_ID: "${{ github.event.pull_request.number }}"
-          # PERSONAL_ACCESS_TOKEN is a token generated for the account hosting
-          # the rendering repository, not the account running this script.
-          # Generate one here:
-          # https://github.com/settings/tokens/new
-          # The token should have public_repo scope set, and the user the token
-          # was generated for should have the ability to trigger
-          # workflow_dispatch events in the rendering repository.
-          PULL_REQUEST_USER: "${{ secrets.PULL_REQUEST_USER }}"
-          PULL_REQUEST_TOKEN: "${{ secrets.PULL_REQUEST_TOKEN }}"
-          RENDER_REPOSITORY_OWNER: "${{ github.repository_owner }}"
-          RENDER_REPOSITORY_NAME: "pr.texasbutterfliesmonitoring.org"
-        run: |
-          set -eu
-          cat "${GITHUB_EVENT_PATH}" \
-          | jq --compact-output '{
-              "ref": $github_ref,
-              "inputs": {
-                  "pull_request_id": $pull_request_id,
-                  "pull_request_event": (. | @json),
-              }
-          }' \
-              --arg github_ref "${GITHUB_REF}" \
-              --arg pull_request_id "${PULL_REQUEST_ID}" \
-          | curl \
-              --fail \
-              --fail-early \
-              --request POST \
-              --header "Accept: application/vnd.github.v3+json" \
-              --user "${PULL_REQUEST_USER}:${PULL_REQUEST_TOKEN}" \
-              --post301 --post302 --post303 \
-              --data "@-" \
-              --url "https://api.github.com/repos/${RENDER_REPOSITORY_OWNER}/${RENDER_REPOSITORY_NAME}/actions/workflows/pull_request.yaml/dispatches"
+          GITHUB_EVENT: "${{ github.event }}"
+          GITHUB_REF: "${{ env.GITHUB_REF }}"
+          RENDER_REPOSITORY_TOKEN_USER: "${{ secrets.PULL_REQUEST_USER }}"
+          RENDER_REPOSITORY_TOKEN: "${{ secrets.PULL_REQUEST_TOKEN }}"
+          RENDER_REPOSITORY: "${{ github.repository_owner }}/pr.texasbutterfliesmonitoring.org"
+        run: curl -fsSL "https://github.com/${RENDER_REPOSITORY}/raw/main/dispatch.sh" | sh
 
       - name: Make Comment
         shell: bash
         env:
-          COMMENT_USER: "github-actions"
-          GITHUB_TOKEN: "${{ github.token }}"
-          # See: https://docs.github.com/en/developers/webhooks-and-events/webhook-events-and-payloads#webhook-payload-example-30
-          PULL_REQUEST_COMMENTS_URL: "${{ github.event.pull_request.issue_url }}"
-          RENDER_HOMEPAGE: "https://pr.texasbutterfliesmonitoring.org/${{ github.event.pull_request.number }}/index.html"
-          RENDER_REPOSITORY_OWNER: "${{ github.repository_owner }}"
-          RENDER_REPOSITORY_NAME: "pr.texasbutterfliesmonitoring.org"
-          # This filename
+          PREVIEW_URL: "https://pr.texasbutterfliesmonitoring.org/${{ github.event.pull_request.number }}/index.html"
+          RENDER_REPOSITORY: "${{ github.repository_owner }}/pr.texasbutterfliesmonitoring.org"
           WORKFLOW_FILE: "pull_request.yaml"
-        run: |
-          set -eu
-          printf \
-          '# DO NOT MERGE BEFORE PREVIEWING THE CHANGES
-
-          [Preview the changes at this link.](%s)
-
-          If you have visited the above link before, you may have to refresh your browser to see the changes. This is due to browsers caching data from websites. [This link has more information about this](https://refreshyourcache.com/en/cache/).
-
-          If the preview looks fine, you can merge the pull request.
-
-          If the preview is not fine, or not available, [there are logs available at this link.](<https://github.com/%s/%s/actions/workflows/%s?query=event%3Aworkflow_dispatch+branch%3Amain>)
-          
-          _note: this comment was generated automatically_' \
-              "${RENDER_HOMEPAGE}" \
-              "${RENDER_REPOSITORY_OWNER}" \
-              "${RENDER_REPOSITORY_NAME}" \
-              "${WORKFLOW_FILE}" \
-              | jq '{"body":.}' --raw-input --slurp --compact-output \
-              | curl \
-                  --request POST \
-                  --header "Accept: application/vnd.github.v3+json" \
-                  --user "${COMMENT_USER}:${GITHUB_TOKEN}" \
-                  --data "@-" \
-                  --url "${PULL_REQUEST_COMMENTS_URL}/comments"
+          GITHUB_TOKEN: "${{ github.token }}"
+          PULL_REQUEST_COMMENTS_URL: "${{ github.event.pull_request.issue_url }}"
+        run: curl -fsSL "https://github.com/${RENDER_REPOSITORY}/raw/main/comment.sh" | sh
 
   render:
     name: Build pull request site with Hugo
@@ -129,85 +72,19 @@ jobs:
         shell: bash
         env:
           GITHUB_WORKSPACE: "${{ github.workspace }}"
-        run: |
-          # See: https://docs.github.com/en/rest/reference/repos#releases
-          set -eu
-          HUGO_DIR="${GITHUB_WORKSPACE:-$(pwd)}/hugo"
-          mkdir -p "${HUGO_DIR}"
-          eval "$(curl --fail \
-              --silent \
-              --show-error \
-              --location \
-              --url 'https://api.github.com/repos/gohugoio/hugo/releases/latest' \
-              | jq --compact-output --raw-output '.assets |
-                  (
-                    map(select(.name | test("^hugo_extended_\\d+\\.\\d+\\.\\d+_Linux-64bit.tar.gz$")))[0]
-                    | ["HUGO_FILENAME='"'"'" + .name + "'"'"'", "HUGO_URL='"'"'" + .browser_download_url + "'"'"'"]
-                  )
-                  +
-                  (
-                    map(select(.name | test("^hugo_\\d+\\.\\d+\\.\\d+_checksums.txt$")))[0]
-                    | ["CHECKSUM_FILENAME='"'"'" + .name + "'"'"'", "CHECKSUM_URL='"'"'" + .browser_download_url + "'"'"'"]
-                  )
-                  | .[]')"
-          curl --fail \
-               --location \
-               --url "${CHECKSUM_URL}" \
-               --output "${HUGO_DIR}/${CHECKSUM_FILENAME}" &
-          CHECKSUM_PID=$!
-          curl --fail \
-               --location \
-               --url "${HUGO_URL}" \
-               --output "${HUGO_DIR}/${HUGO_FILENAME}" &
-          HUGO_PID=$!
-          wait "${CHECKSUM_PID}" "${HUGO_PID}"
-          (cd "${HUGO_DIR}" \
-              && grep --no-messages \
-                      --no-filename \
-                      --fixed-strings \
-                      "${HUGO_FILENAME}" \
-                      "${CHECKSUM_FILENAME}" \
-              | sha256sum --check)
-          tar -vxzf "${HUGO_DIR}/${HUGO_FILENAME}" --overwrite -C "${HUGO_DIR}"
-          rm "${HUGO_DIR}/LICENSE" "${HUGO_DIR}/README.md" "${HUGO_DIR}/${HUGO_FILENAME}" "${HUGO_DIR}/${CHECKSUM_FILENAME}"
-          echo "HUGO_BIN=${HUGO_DIR}/hugo" >> "${GITHUB_ENV}"
+        run: curl -fsSL "https://github.com/${RENDER_REPOSITORY}/raw/main/download_hugo.sh" | sh
 
       - name: Render pull request
         shell: bash
         env:
-          PULL_REQUEST_ID: "${{ github.event.inputs.pull_request_id }}"
-          ACTIONS_USERNAME: "github-actions"
-          ACTIONS_EMAIL: "41898282+github-actions[bot]@users.noreply.github.com"
-          HUGO_BASEURL: "https://pr.texasbutterfliesmonitoring.org/${{ github.event.inputs.pull_request_id }}/"
-          # The repository where the pull request is; the dispatching repository
+          GIT_USER_NAME: "github-actions"
+          GIT_USER_EMAIL: "41898282+github-actions[bot]@users.noreply.github.com"
           REPOSITORY_OF_PULL_REQUEST: "TXButterflies/TXButterflies.github.io"
-          SOURCE: "${{ github.workspace }}/pull_request/"
+          PULL_REQUEST_ID: "${{ github.event.inputs.pull_request_id }}"
           DESTINATION: "${{ github.workspace }}/gh-pages/${{ github.event.inputs.pull_request_id }}"
+          SOURCE: "${{ github.workspace }}/pull_request/"
+          HUGO_BASEURL: "https://pr.texasbutterfliesmonitoring.org/${{ github.event.inputs.pull_request_id }}/"
           HUGO_ENVIRONMENT: development
-        run: |
-          set -eu
-          git config --global user.name "${ACTIONS_USERNAME}"
-          git config --global user.email "${ACTIONS_EMAIL}"
-          git init "${GITHUB_WORKSPACE}/pull_request/"
-          cd "${GITHUB_WORKSPACE}/pull_request/"
-          git remote add origin "https://github.com/${REPOSITORY_OF_PULL_REQUEST}.git"
-          git fetch origin "refs/pull/${PULL_REQUEST_ID}/merge"
-          git checkout FETCH_HEAD
-          # Add pull_request event payload to the data dir so that hugo can access it
-          if cat "${GITHUB_EVENT_PATH}" | jq -e '.inputs | has("pull_request_event")' > /dev/null 2>&1; then
-              mkdir -p ./data/
-              cat "${GITHUB_EVENT_PATH}" | jq --compact-output '.inputs.pull_request_event | fromjson' > ./data/pull_request.json
-          fi
-          cd "${GITHUB_WORKSPACE}"
-          mkdir -p "${DESTINATION}"
-          "${HUGO_BIN}" env --source "${SOURCE}"
-          "${HUGO_BIN}" config --source "${SOURCE}"
-          "${HUGO_BIN}" \
-              --source "${SOURCE}" \
-              --destination "${DESTINATION}" \
-              --cleanDestinationDir
-          cd "${GITHUB_WORKSPACE}/gh-pages/"
-          git add -A :/
-          git commit -m "publish ${REPOSITORY_OF_PULL_REQUEST}#${PULL_REQUEST_ID}"
-          git push
+          RENDER_REPOSITORY: "${{ github.repository_owner }}/pr.texasbutterfliesmonitoring.org"
+        run: curl -fsSL "https://github.com/${RENDER_REPOSITORY}/raw/main/render_and_push.sh" | sh
 ...
