@@ -48,13 +48,6 @@ export WORKFLOW_FILE
 # https://docs.github.com/en/rest/reference/issues#create-an-issue-comment
 PULL_REQUEST_COMMENTS_URL="${PULL_REQUEST_COMMENTS_URL:-"https://api.github.com/repos/mawillcockson/TXButterflies.github.io/issues/1"}"
 export PULL_REQUEST_COMMENTS_URL
-# The number of seconds to wait for each step of building a website to complete
-TIMEOUT_SEC="${TIMEOUT_SEC:-"120"}"
-export TIMEOUT_SEC
-# The number of seconds to wait between checking the status of each step of
-# building a website
-INTERVAL_SEC="${INTERVAL_SEC:-"10"}"
-export INTERVAL_SEC
 
 
 if [ -z "${CI+"unset"}" ]; then

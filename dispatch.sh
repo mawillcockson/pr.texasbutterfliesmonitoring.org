@@ -42,6 +42,16 @@ export GITHUB_REF
 # workflow
 RENDER_REPOSITORY="${RENDER_REPOSITORY:-"mawillcockson/pr.texasbutterfliesmonitoring.org"}"
 export RENDER_REPOSITORY
+# The number of seconds to wait for each step of building a website to complete
+TIMEOUT_SEC="${TIMEOUT_SEC:-"120"}"
+export TIMEOUT_SEC
+# The number of seconds to wait between checking the status of each step of
+# building a website
+INTERVAL_SEC="${INTERVAL_SEC:-"10"}"
+export INTERVAL_SEC
+# The maximum time allowed for cURL to complete a request
+CURL_TIMEOUT="${CURL_TIMEOUT:-"15"}"
+export CURL_TIMEOUT
 
 
 if [ -z "${CI+"unset"}" ]; then
@@ -61,7 +71,9 @@ log() {
 
 # Collect initial state, for comparisons later
 PRIOR_RUN_JSON="$(curl \
+    --max-time "${CURL_TIMEOUT}" \
     --request GET \
+    --get \
     --header "Accept: application/vnd.github.v3+json" \
     --user "${GITHUB_TOKEN_USER}:${GITHUB_TOKEN}" \
     --url "https://api.github.com/repos/${RENDER_REPOSITORY}/actions/runs" \
@@ -72,10 +84,11 @@ export PRIOR_RUN_ID
 log "PRIOR_RUN_ID: '${PRIOR_RUN_ID}'"
 
 PRIOR_COMMIT_JSON="$(curl \
+    --max-time "${CURL_TIMEOUT}" \
     --request GET \
+    --get \
     --header "Accept: application/vnd.github.v3+json" \
     --user "${RENDER_REPOSITORY_TOKEN_USER}:${RENDER_REPOSITORY_TOKEN}" \
-    --get \
     --url "https://api.github.com/repos/${RENDER_REPOSITORY}/commits" \
     --data-urlencode "sha=gh-pages" \
     --data-urlencode "per_page=1")"
@@ -85,12 +98,13 @@ export PRIOR_COMMIT_SHA
 log "PRIOR_COMMIT_SHA: '${PRIOR_COMMIT_SHA}'"
 
 PRIOR_DEPLOYMENT_JSON="$(curl \
+    --max-time "${CURL_TIMEOUT}" \
     --request GET \
     --get \
     --header "Accept: application/vnd.github.v3+json" \
     --user "${GITHUB_TOKEN_USER}:${GITHUB_TOKEN}" \
-    --url "https://api.github.com/repos/${RENDER_REPOSITORY}/deployments")" \
-    --data-urlencode "per_page=1"
+    --url "https://api.github.com/repos/${RENDER_REPOSITORY}/deployments" \
+    --data-urlencode "per_page=1")"
 export PRIOR_DEPLOYMENT_JSON
 PRIOR_DEPLOYMENT_ID="$(jq -nre 'env.PRIOR_DEPLOYMENT_JSON | fromjson[0].id')"
 export PRIOR_DEPLOYMENT_ID
@@ -109,6 +123,7 @@ export DISPATCH_PAYLOAD
 log "DISPATCH_PAYLOAD: '${DISPATCH_PAYLOAD}'"
 
 curl \
+    --max-time "${CURL_TIMEOUT}" \
     --request POST \
     --header "Accept: application/vnd.github.v3+json" \
     --user "${RENDER_REPOSITORY_TOKEN_USER}:${RENDER_REPOSITORY_TOKEN}" \
@@ -126,7 +141,9 @@ set_output() {
 
 # List the most recent GitHub Actions run for the render repository
 MOST_RECENT_RUN="$(curl \
+    --max-time "${CURL_TIMEOUT}" \
     --request GET \
+    --get \
     --header "Accept: application/vnd.github.v3+json" \
     --user "${GITHUB_TOKEN_USER}:${GITHUB_TOKEN}" \
     --url "https://api.github.com/repos/${RENDER_REPOSITORY}/actions/runs" \
@@ -149,7 +166,9 @@ while [ "${PRIOR_RUN_ID}" = "${MOST_RECENT_RUN_ID}" ]; do
     sleep "${INTERVAL_SEC}"
 
     MOST_RECENT_RUN="$(curl \
+        --max-time "${CURL_TIMEOUT}" \
         --request GET \
+        --get \
         --header "Accept: application/vnd.github.v3+json" \
         --user "${GITHUB_TOKEN_USER}:${GITHUB_TOKEN}" \
         --url "https://api.github.com/repos/${RENDER_REPOSITORY}/actions/runs" \
@@ -171,6 +190,7 @@ log "RUN_URL: '${RUN_URL}'"
 
 run_json() {
     curl \
+        --max-time "${CURL_TIMEOUT}" \
         --request GET \
         --header "Accept: application/vnd.github.v3+json" \
         --user "${GITHUB_TOKEN_USER}:${GITHUB_TOKEN}" \
@@ -223,6 +243,7 @@ CHECK_RUNS_URL="$(printf 'https://api.github.com/repos/%s/check-suites/%s/check-
 export CHECK_RUNS_URL
 log "CHECK_RUNS_URL: '${CHECK_RUNS_URL}'"
 CHECK_RUNS_JSON="$(curl \
+    --max-time "${CURL_TIMEOUT}" \
     --request GET \
     --header "Accept: application/vnd.github.v3+json" \
     --user "${GITHUB_TOKEN_USER}:${GITHUB_TOKEN}" \
@@ -244,10 +265,11 @@ fi
 # Now check that a commit was made to the gh-pages branch of the
 # RENDER_REPOSITORY
 COMMIT_JSON="$(curl \
+    --max-time "${CURL_TIMEOUT}" \
     --request GET \
+    --get \
     --header "Accept: application/vnd.github.v3+json" \
     --user "${RENDER_REPOSITORY_TOKEN_USER}:${RENDER_REPOSITORY_TOKEN}" \
-    --get \
     --url "https://api.github.com/repos/${RENDER_REPOSITORY}/commits" \
     --data-urlencode "sha=gh-pages" \
     --data-urlencode "per_page=1")"
@@ -267,10 +289,11 @@ while [ "${PRIOR_COMMIT_SHA}" = "${COMMIT_SHA}" ]; do
     sleep "${INTERVAL_SEC}"
 
     COMMIT_JSON="$(curl \
+        --max-time "${CURL_TIMEOUT}" \
         --request GET \
+        --get \
         --header "Accept: application/vnd.github.v3+json" \
         --user "${RENDER_REPOSITORY_TOKEN_USER}:${RENDER_REPOSITORY_TOKEN}" \
-        --get \
         --url "https://api.github.com/repos/${RENDER_REPOSITORY}/commits" \
         --data-urlencode "sha=gh-pages" \
         --data-urlencode "per_page=1")"
@@ -281,6 +304,7 @@ done
 # A commit was made to the gh-pages branch
 # Now check deployment
 DEPLOYMENT_JSON="$(curl \
+    --max-time "${CURL_TIMEOUT}" \
     --request GET \
     --header "Accept: application/vnd.github.v3+json" \
     --user "${GITHUB_TOKEN_USER}:${GITHUB_TOKEN}" \
@@ -301,6 +325,7 @@ while [ "${PRIOR_DEPLOYMENT_ID}" = "${DEPLOYMENT_ID}" ]; do
     sleep "${INTERVAL_SEC}"
 
     DEPLOYMENT_JSON="$(curl \
+        --max-time "${CURL_TIMEOUT}" \
         --request GET \
         --header "Accept: application/vnd.github.v3+json" \
         --user "${GITHUB_TOKEN_USER}:${GITHUB_TOKEN}" \
@@ -313,6 +338,7 @@ done
 # Verify website is reachable
 http_status() {
     curl \
+        --max-time "${CURL_TIMEOUT}" \
         --request HEAD \
         --fail \
         --silent \
