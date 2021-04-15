@@ -20,6 +20,9 @@ export PULL_REQUEST_ID
 # The URL used to confirm the preview is reachable
 PREVIEW_URL="${PREVIEW_URL:-"https://pr.texasbutterfliesmonitoring.org/${PULL_REQUEST_ID}"}"
 export PREVIEW_URL
+# The repository that will run this script in a workflow
+DISPATCH_REPOSITORY="${DISPATCH_REPOSITORY:-"mawillcockson/TXButterflies.github.io"}"
+export DISPATCH_REPOSITORY
 # The full payload of the github event
 # Pull Request payload example:
 # https://docs.github.com/en/developers/webhooks-and-events/webhook-events-and-payloads#pull_request
@@ -29,6 +32,9 @@ GITHUB_EVENT="${GITHUB_EVENT:-"$(jq --null-input --compact-output '{
     "pull_request": {
         "html_url": ("https://github.com/mawillcockson/TXButterflies.github.io/pull/" + env.PULL_REQUEST_ID),
         "number": (env.PULL_REQUEST_ID),
+    },
+    "repository": {
+        "full_name": env.DISPATCH_REPOSITORY,
     },
 }')"}"
 export GITHUB_EVENT
@@ -54,23 +60,44 @@ CURL_TIMEOUT="${CURL_TIMEOUT:-"15"}"
 export CURL_TIMEOUT
 
 
-if [ -z "${CI+"unset"}" ]; then
-    for VAR in "RENDER_REPOSITORY_TOKEN" "RENDER_REPOSITORY_TOKEN_USER"; do
-        CURRENT_VAL="$(printenv "${VAR}" || printf '')"
-        if [ -z "${CURRENT_VAL}" ]; then
+# If the environment variable 'CI' is not set, ask for the API token and
+# username for the RENDER_REPOSITORY.
+# Otherwise throw an error.
+for VAR in "RENDER_REPOSITORY_TOKEN" "RENDER_REPOSITORY_TOKEN_USER"; do
+    CURRENT_VAL="$(printenv "${VAR}" || printf '')"
+    if [ -z "${CI+"unset"}" ]; then
+        if [ -z "${CURRENT_VAL:+"unset"}" ]; then
             printf "%s: " "${var}"
             read "${var}"
             export "${var}"
         fi
-    done
-fi
+    elif [ -z "${CURRENT_VAL-}" ]; then
+        echo "environment variable '${VAR}' must be set"
+        exit 1
+    fi
+done
 
 log() {
     echo "$@"
 }
 
+set_output() {
+    # See:
+    # https://docs.github.com/en/actions/reference/workflow-commands-for-github-actions#setting-an-output-parameter
+    printf '::set-output name=%s::%s\n' "$1" "$2"
+}
+
+set_env() {
+    if [ -n "${CI+"set"}" ]; then
+        printf '%s=%s\n' "$1" "$2" >> "${GITHUB_ENV}"
+    else
+        log "set_env '%s' '%s'" "$1" "$2"
+    fi
+}
+
+
 # Collect initial state, for comparisons later
-PRIOR_RUN_JSON="$(curl \
+PRIOR_RENDER_RUN_JSON="$(curl \
     --max-time "${CURL_TIMEOUT}" \
     --request GET \
     --get \
@@ -78,12 +105,12 @@ PRIOR_RUN_JSON="$(curl \
     --user "${GITHUB_TOKEN_USER}:${GITHUB_TOKEN}" \
     --url "https://api.github.com/repos/${RENDER_REPOSITORY}/actions/runs" \
     --data-urlencode "per_page=1")"
-export PRIOR_RUN_JSON
-PRIOR_RUN_ID="$(jq -nre 'env.PRIOR_RUN_JSON | fromjson.workflow_runs[0].id')"
-export PRIOR_RUN_ID
-log "PRIOR_RUN_ID: '${PRIOR_RUN_ID}'"
+export PRIOR_RENDER_RUN_JSON
+PRIOR_RENDER_RUN_ID="$(jq -nre 'env.PRIOR_RENDER_RUN_JSON | fromjson.workflow_runs[0].id')"
+export PRIOR_RENDER_RUN_ID
+log "PRIOR_RENDER_RUN_ID: '${PRIOR_RENDER_RUN_ID}'"
 
-PRIOR_COMMIT_JSON="$(curl \
+PRIOR_RENDER_GH_PAGES_COMMIT_JSON="$(curl \
     --max-time "${CURL_TIMEOUT}" \
     --request GET \
     --get \
@@ -92,12 +119,12 @@ PRIOR_COMMIT_JSON="$(curl \
     --url "https://api.github.com/repos/${RENDER_REPOSITORY}/commits" \
     --data-urlencode "sha=gh-pages" \
     --data-urlencode "per_page=1")"
-export PRIOR_COMMIT_JSON
-PRIOR_COMMIT_SHA="$(jq -nre 'env.PRIOR_COMMIT_JSON | fromjson[0].sha')"
-export PRIOR_COMMIT_SHA
-log "PRIOR_COMMIT_SHA: '${PRIOR_COMMIT_SHA}'"
+export PRIOR_RENDER_GH_PAGES_COMMIT_JSON
+PRIOR_RENDER_GH_PAGES_COMMIT_SHA="$(jq -nre 'env.PRIOR_RENDER_GH_PAGES_COMMIT_JSON | fromjson[0].sha')"
+export PRIOR_RENDER_GH_PAGES_COMMIT_SHA
+log "PRIOR_RENDER_GH_PAGES_COMMIT_SHA: '${PRIOR_RENDER_GH_PAGES_COMMIT_SHA}'"
 
-PRIOR_DEPLOYMENT_JSON="$(curl \
+PRIOR_RENDER_DEPLOYMENT_JSON="$(curl \
     --max-time "${CURL_TIMEOUT}" \
     --request GET \
     --get \
@@ -105,13 +132,38 @@ PRIOR_DEPLOYMENT_JSON="$(curl \
     --user "${GITHUB_TOKEN_USER}:${GITHUB_TOKEN}" \
     --url "https://api.github.com/repos/${RENDER_REPOSITORY}/deployments" \
     --data-urlencode "per_page=1")"
-export PRIOR_DEPLOYMENT_JSON
-PRIOR_DEPLOYMENT_ID="$(jq -nre 'env.PRIOR_DEPLOYMENT_JSON | fromjson[0].id')"
-export PRIOR_DEPLOYMENT_ID
-log "PRIOR_DEPLOYMENT_ID: '${PRIOR_DEPLOYMENT_ID}'"
+export PRIOR_RENDER_DEPLOYMENT_JSON
+PRIOR_RENDER_DEPLOYMENT_ID="$(jq -nre 'env.PRIOR_RENDER_DEPLOYMENT_JSON | fromjson[0].id')"
+export PRIOR_RENDER_DEPLOYMENT_ID
+log "PRIOR_RENDER_DEPLOYMENT_ID: '${PRIOR_RENDER_DEPLOYMENT_ID}'"
+# This run
+DISPATCH_RUN_JSON="$(curl \
+    --max-time "${CURL_TIMEOUT}" \
+    --request GET \
+    --get \
+    --header "Accept: application/vnd.github.v3+json" \
+    --user "${GITHUB_TOKEN_USER}:${GITHUB_TOKEN}" \
+    --url "https://api.github.com/repos/${DISPATCH_REPOSITORY}/actions/runs" \
+    --data-urlencode "per_page=1")"
+export DISPATCH_JSON
+DISPATCH_CHECK_SUITE_ID="$(jq -nre 'env.DISPATCH_RUN_JSON | fromjson.workflow_runs[0].check_suite_id')"
+export DISPATCH_CHECK_SUITE_ID
+DISPATCH_CHECK_RUN_URL="https://api.github.com/repos/${DISPATCH_REPOSITORY}/check-suites/${DISPATCH_CHECK_SUITE_ID}/check-runs"
+export DISPATCH_CHECK_RUN_URL
+DISPATCH_CHECK_RUN_JSON="$(curl \
+    --max-time "${CURL_TIMEOUT}" \
+    --request GET \
+    --header "Accept: application/vnd.github.v3+json" \
+    --user "${GITHUB_TOKEN_USER}:${GITHUB_TOKEN}" \
+    --url "${DISPATCH_CHECK_RUN_URL}")"
+export DISPATCH_CHECK_RUN_JSON
+DISPATCH_LOG_URL="$(jq -nre 'env.DISPATCH_CHECK_RUN_JSON | fromjson.check_runs |
+    map(select(.check_suite.id == env.DISPATCH_CHECK_SUITE_ID and (.name | test("^dispatch"; "i")))) | first.details_url')"
+export DISPATCH_LOG_URL
+set_output "DISPATCH_LOG_URL" "${DISPATCH_LOG_URL}"
 
 
-# Dispatch preview build job
+# Dispatch preview render job
 DISPATCH_PAYLOAD="$(jq --null-input --compact-output '{
     "ref": (env.GITHUB_REF),
     "inputs": {
@@ -132,15 +184,9 @@ curl \
     --url "https://api.github.com/repos/${RENDER_REPOSITORY}/actions/workflows/pull_request.yaml/dispatches"
 
 
-set_output() {
-    # See:
-    # https://docs.github.com/en/actions/reference/workflow-commands-for-github-actions#setting-an-output-parameter
-    printf '::set-output name=result::%s\n' "$1"
-    export DISPATCH_RESULT="$1"
-}
-
-# List the most recent GitHub Actions run for the render repository
-MOST_RECENT_RUN="$(curl \
+# Find the GitHub Actions run that the dispatch triggered in the
+# RENDER_REPOSITORY
+MOST_RECENT_RENDER_RUN_JSON="$(curl \
     --max-time "${CURL_TIMEOUT}" \
     --request GET \
     --get \
@@ -148,24 +194,24 @@ MOST_RECENT_RUN="$(curl \
     --user "${GITHUB_TOKEN_USER}:${GITHUB_TOKEN}" \
     --url "https://api.github.com/repos/${RENDER_REPOSITORY}/actions/runs" \
     --data-urlencode "per_page=1")"
-export MOST_RECENT_RUN
-MOST_RECENT_RUN_ID="$(jq -nre 'env.MOST_RECENT_RUN | fromjson.workflow_runs[0].id')"
-export MOST_RECENT_RUN_ID
-log "MOST_RECENT_RUN_ID: '${MOST_RECENT_RUN_ID}'"
+export MOST_RECENT_RENDER_RUN_JSON
+MOST_RECENT_RENDER_RUN_ID="$(jq -nre 'env.MOST_RECENT_RENDER_RUN_JSON | fromjson.workflow_runs[0].id')"
+export MOST_RECENT_RENDER_RUN_ID
+log "MOST_RECENT_RENDER_RUN_ID: '${MOST_RECENT_RENDER_RUN_ID}'"
 
-
+# If it wasn't found, wait until it's created
 TIMEOUT_DATE="$(( $(date +%s) + TIMEOUT_SEC ))"
 export TIMEOUT_DATE
 
-while [ "${PRIOR_RUN_ID}" = "${MOST_RECENT_RUN_ID}" ]; do
+while [ "${PRIOR_RENDER_RUN_ID}" = "${MOST_RECENT_RENDER_RUN_ID}" ]; do
     if [ "$(date +%s)" -gt "${TIMEOUT_DATE}" ]; then
         echo "Timeout exceeded while waiting for dispatch to add a job to the queue"
-        set_output "dispatch_timeout"
+        set_output "DISPATCH_RESULT" "dispatch_timeout"
         exit 0
     fi
     sleep "${INTERVAL_SEC}"
 
-    MOST_RECENT_RUN="$(curl \
+    MOST_RECENT_RENDER_RUN_JSON="$(curl \
         --max-time "${CURL_TIMEOUT}" \
         --request GET \
         --get \
@@ -173,98 +219,118 @@ while [ "${PRIOR_RUN_ID}" = "${MOST_RECENT_RUN_ID}" ]; do
         --user "${GITHUB_TOKEN_USER}:${GITHUB_TOKEN}" \
         --url "https://api.github.com/repos/${RENDER_REPOSITORY}/actions/runs" \
         --data-urlencode "per_page=1")"
-    MOST_RECENT_RUN_ID="$(jq -nre 'env.MOST_RECENT_RUN | fromjson.workflow_runs[0].id')"
+    MOST_RECENT_RENDER_RUN_ID="$(jq -nre 'env.MOST_RECENT_RENDER_RUN_JSON | fromjson.workflow_runs[0].id')"
 done
 
-log "MOST_RECENT_RUN: '${MOST_RECENT_RUN}'"
+# It was found
+log "MOST_RECENT_RENDER_RUN_JSON: '${MOST_RECENT_RENDER_RUN_JSON}'"
 
-if ! jq -nre 'env.MOST_RECENT_RUN | fromjson.workflow_runs[0].event == "workflow_dispatch"'; then
+# Make sure it's a workflow_dispatch event, since that's what's created by the
+# dispatch sent earlier
+if ! jq -nre 'env.MOST_RECENT_RENDER_RUN_JSON | fromjson.workflow_runs[0].event == "workflow_dispatch"'; then
     echo "Most recent workflow run is not a workflow_dispatch"
-    set_output "dispatch_error"
+    set_output "DISPATCH_RESULT" "dispatch_error"
     exit 0
 fi
 
-RUN_URL="$(jq -nre 'env.MOST_RECENT_RUN | fromjson.workflow_runs[0].url')"
-export RUN_URL
-log "RUN_URL: '${RUN_URL}'"
 
-run_json() {
+# Find the human-readable HTML URL for the render run
+RENDER_RUN_URL="$(jq -nre 'env.MOST_RECENT_RENDER_RUN_JSON | fromjson.workflow_runs[0].url')"
+export RENDER_RUN_URL
+log "RENDER_RUN_URL: '${RENDER_RUN_URL}'"
+
+render_run_json() {
     curl \
         --max-time "${CURL_TIMEOUT}" \
         --request GET \
         --header "Accept: application/vnd.github.v3+json" \
         --user "${GITHUB_TOKEN_USER}:${GITHUB_TOKEN}" \
-        --url "${RUN_URL}"
+        --url "${RENDER_RUN_URL}"
 }
 
 # Wait while the job run is queued
-RUN_JSON="$(run_json)"
-export RUN_JSON
-RUN_STATUS="$(jq -nre 'env.RUN_JSON | fromjson.status')"
-export RUN_STATUS
-log "RUN_STATUS: '${RUN_STATUS}'"
+RENDER_RUN_JSON="$(render_run_json)"
+export RENDER_RUN_JSON
+RENDER_CHECK_SUITE_ID="$(jq -nre 'env.RENDER_RUN_JSON | fromjson.check_suite_id')"
+export RENDER_CHECK_SUITE_ID
+RENDER_RUN_JSON="$(curl \
+    --max-time "${CURL_TIMEOUT}" \
+    --request GET \
+    --get \
+    --header "Accept: application/vnd.github.v3+json" \
+    --user "${GITHUB_TOKEN_USER}:${GITHUB_TOKEN}" \
+    --url "https://api.github.com/repos/${RENDER_REPOSITORY}/actions/runs" \
+    --data-urlencode "per_page=1")"
+export RENDER_RUN_JSON
+RENDER_CHECK_SUITE_ID="$(jq -nre 'env.RENDER_RUN_JSON | fromjson.workflow_runs[0].check_suite_id')"
+export RENDER_CHECK_SUITE_ID
+RENDER_CHECK_RUN_URL="https://api.github.com/repos/${RENDER_REPOSITORY}/check-suites/${RENDER_CHECK_SUITE_ID}/check-runs"
+export RENDER_CHECK_RUN_URL
+log "RENDER_CHECK_RUN_URL: '${RENDER_CHECK_RUN_URL}'"
+RENDER_CHECK_RUN_JSON="$(curl \
+    --max-time "${CURL_TIMEOUT}" \
+    --request GET \
+    --header "Accept: application/vnd.github.v3+json" \
+    --user "${GITHUB_TOKEN_USER}:${GITHUB_TOKEN}" \
+    --url "${RENDER_CHECK_RUN_URL}")"
+export RENDER_CHECK_RUN_JSON
+RENDER_LOG_URL="$(jq -nre 'env.RENDER_CHECK_RUN_JSON | fromjson.check_runs |
+    map(select(.check_suite.id == env.RENDER_CHECK_SUITE_ID and (.name | test("^build"; "i")))) | first.details_url')"
+export RENDER_LOG_URL
+set_output "RENDER_LOG_URL" "${RENDER_LOG_URL}"
+
+
+# Check the status of the render run, to see if that job has been queued, is
+# running, or has been completed
+RENDER_RUN_STATUS="$(jq -nre 'env.RENDER_RUN_JSON | fromjson.status')"
+export RENDER_RUN_STATUS
+log "RENDER_RUN_STATUS: '${RENDER_RUN_STATUS}'"
 
 TIMEOUT_DATE="$(( $(date +%s) + TIMEOUT_SEC ))"
 
-while [ "${RUN_STATUS}" = "queued" ]; do
+# Wait while the job is queued
+while [ "${RENDER_RUN_STATUS}" = "queued" ]; do
     if [ "$(date +%s)" -gt "${TIMEOUT_DATE}" ]; then
         echo "Timeout exceeded while waiting for job to run"
-        set_output "queue_timeout"
+        set_output "DISPATCH_RESULT" "queue_timeout"
         exit 0
     fi
     sleep "${INTERVAL_SEC}"
 
-    RUN_JSON="$(run_json)"
-    RUN_STATUS="$(jq -nre 'env.RUN_JSON | fromjson.status')"
-    log "RUN_STATUS: '${RUN_STATUS}'"
+    RENDER_RUN_JSON="$(render_run_json)"
+    RENDER_RUN_STATUS="$(jq -nre 'env.RENDER_RUN_JSON | fromjson.status')"
+    log "RENDER_RUN_STATUS: '${RENDER_RUN_STATUS}'"
 done
 
 # Wait while the job run is running
 TIMEOUT_DATE="$(( $(date +%s) + TIMEOUT_SEC ))"
 
-while [ "${RUN_STATUS}" = "in_progress" ]; do
+while [ "${RENDER_RUN_STATUS}" = "in_progress" ]; do
     if [ "$(date +%s)" -gt "${TIMEOUT_DATE}" ]; then
         echo "Timeout exceeded while waiting for job to finish running"
-        set_output "run_timeout"
+        set_output "DISPATCH_RESULT" "run_timeout"
         exit 0
     fi
     sleep "${INTERVAL_SEC}"
 
-    RUN_JSON="$(run_json)"
-    RUN_STATUS="$(jq -nre 'env.RUN_JSON | fromjson.status')"
-    log "RUN_STATUS: '${RUN_STATUS}'"
+    RENDER_RUN_JSON="$(render_run_json)"
+    RENDER_RUN_STATUS="$(jq -nre 'env.RENDER_RUN_JSON | fromjson.status')"
+    log "RENDER_RUN_STATUS: '${RENDER_RUN_STATUS}'"
 done
 
-# GitHub Actions workflow has been run, check status and conclustion
-RUN_JSON="$(run_json)"
-CHECK_SUITE_ID="$(jq -nre 'env.RUN_JSON | fromjson.check_suite_id')"
-export CHECK_SUITE_ID
-CHECK_RUNS_URL="$(printf 'https://api.github.com/repos/%s/check-suites/%s/check-runs' "${RENDER_REPOSITORY}" "${CHECK_SUITE_ID}")"
-export CHECK_RUNS_URL
-log "CHECK_RUNS_URL: '${CHECK_RUNS_URL}'"
-CHECK_RUNS_JSON="$(curl \
-    --max-time "${CURL_TIMEOUT}" \
-    --request GET \
-    --header "Accept: application/vnd.github.v3+json" \
-    --user "${GITHUB_TOKEN_USER}:${GITHUB_TOKEN}" \
-    --url "${CHECK_RUNS_URL}")"
-export CHECK_RUNS_JSON
-RUN_DETAILS_URL="$(jq -nre 'env.CHECK_RUNS_JSON | fromjson.check_runs | map(select(.name | test("^build"; "i"))) | first.html_url')"
-export RUN_DETAILS_URL
-log "RUN_DETAILS_URL: '${RUN_DETAILS_URL}'"
-
-if [ "$(jq -nre 'env.RUN_JSON | fromjson.status')" != "completed" ]; then
-    set_output "run_error"
+# GitHub Actions render workflow has been run, check status and conclustion
+if [ "$(jq -nre 'env.RENDER_RUN_JSON | fromjson.status')" != "completed" ]; then
+    set_output "DISPATCH_RESULT" "run_error"
     exit 0
-elif [ "$(jq -nre 'env.RUN_JSON | fromjson.conclusion')" != "success" ]; then
-    set_output "run_failed"
+elif [ "$(jq -nre 'env.RENDER_RUN_JSON | fromjson.conclusion')" != "success" ]; then
+    set_output "DISPATCH_RESULT" "run_failed"
     exit 0
 fi
 
-# GitHub Actions Run completed, and was successful
+# GitHub Actions Run completed, and was successful.
 # Now check that a commit was made to the gh-pages branch of the
-# RENDER_REPOSITORY
-COMMIT_JSON="$(curl \
+# RENDER_REPOSITORY.
+RENDER_GH_PAGES_COMMIT_JSON="$(curl \
     --max-time "${CURL_TIMEOUT}" \
     --request GET \
     --get \
@@ -273,22 +339,23 @@ COMMIT_JSON="$(curl \
     --url "https://api.github.com/repos/${RENDER_REPOSITORY}/commits" \
     --data-urlencode "sha=gh-pages" \
     --data-urlencode "per_page=1")"
-export COMMIT_JSON
-COMMIT_SHA="$(jq -nre 'env.COMMIT_JSON | fromjson[0].sha')"
-export COMMIT_SHA
-log "COMMIT_SHA: '${COMMIT_SHA}'"
+export RENDER_GH_PAGES_COMMIT_JSON
+RENDER_GH_PAGES_COMMIT_SHA="$(jq -nre 'env.RENDER_GH_PAGES_COMMIT_JSON | fromjson[0].sha')"
+export RENDER_GH_PAGES_COMMIT_SHA
+log "RENDER_GH_PAGES_COMMIT_SHA: '${RENDER_GH_PAGES_COMMIT_SHA}'"
 
 TIMEOUT_DATE="$(( $(date +%s) + TIMEOUT_SEC ))"
 
-while [ "${PRIOR_COMMIT_SHA}" = "${COMMIT_SHA}" ]; do
+# If the commit hasn't shown up yet, wait for it
+while [ "${PRIOR_RENDER_GH_PAGES_COMMIT_SHA}" = "${RENDER_GH_PAGES_COMMIT_SHA}" ]; do
     if [ "$(date +%s)" -gt "${TIMEOUT_DATE}" ]; then
-        echo "Timeout exceeded while waiting for job to finish running"
-        set_output "run_timeout"
+        echo "The build run succeeded, but a commit has not yet been made to the gh-pages branch of '${RENDER_REPOSITORY}'"
+        set_output "DISPATCH_RESULT" "commit_timeout"
         exit 0
     fi
     sleep "${INTERVAL_SEC}"
 
-    COMMIT_JSON="$(curl \
+    RENDER_GH_PAGES_COMMIT_JSON="$(curl \
         --max-time "${CURL_TIMEOUT}" \
         --request GET \
         --get \
@@ -297,46 +364,46 @@ while [ "${PRIOR_COMMIT_SHA}" = "${COMMIT_SHA}" ]; do
         --url "https://api.github.com/repos/${RENDER_REPOSITORY}/commits" \
         --data-urlencode "sha=gh-pages" \
         --data-urlencode "per_page=1")"
-    COMMIT_SHA="$(jq -nre 'env.COMMIT_JSON | fromjson[0].sha')"
-    log "COMMIT_SHA: '${COMMIT_SHA}'"
+    RENDER_GH_PAGES_COMMIT_SHA="$(jq -nre 'env.RENDER_GH_PAGES_COMMIT_JSON | fromjson[0].sha')"
+    log "RENDER_GH_PAGES_COMMIT_SHA: '${RENDER_GH_PAGES_COMMIT_SHA}'"
 done
 
 # A commit was made to the gh-pages branch
 # Now check deployment
-DEPLOYMENT_JSON="$(curl \
+RENDER_DEPLOYMENT_JSON="$(curl \
     --max-time "${CURL_TIMEOUT}" \
     --request GET \
     --header "Accept: application/vnd.github.v3+json" \
     --user "${GITHUB_TOKEN_USER}:${GITHUB_TOKEN}" \
     --url "https://api.github.com/repos/${RENDER_REPOSITORY}/deployments")"
-export DEPLOYMENT_JSON
-DEPLOYMENT_ID="$(jq -nre 'env.DEPLOYMENT_JSON | fromjson[0].id')"
-export DEPLOYMENT_ID
-log "DEPLOYMENT_ID: '${DEPLOYMENT_ID}'"
+export RENDER_DEPLOYMENT_JSON
+RENDER_DEPLOYMENT_ID="$(jq -nre 'env.RENDER_DEPLOYMENT_JSON | fromjson[0].id')"
+export RENDER_DEPLOYMENT_ID
+log "RENDER_DEPLOYMENT_ID: '${RENDER_DEPLOYMENT_ID}'"
 
 TIMEOUT_DATE="$(( $(date +%s) + TIMEOUT_SEC ))"
 
-while [ "${PRIOR_DEPLOYMENT_ID}" = "${DEPLOYMENT_ID}" ]; do
+while [ "${PRIOR_RENDER_DEPLOYMENT_ID}" = "${RENDER_DEPLOYMENT_ID}" ]; do
     if [ "$(date +%s)" -gt "${TIMEOUT_DATE}" ]; then
-        echo "Timeout exceeded while waiting for job to finish running"
-        set_output "run_timeout"
+        echo "Timeout exceeded while waiting for GitHub Pages to make a new deployment"
+        set_output "DISPATCH_RESULT" "deploy_timeout"
         exit 0
     fi
     sleep "${INTERVAL_SEC}"
 
-    DEPLOYMENT_JSON="$(curl \
+    RENDER_DEPLOYMENT_JSON="$(curl \
         --max-time "${CURL_TIMEOUT}" \
         --request GET \
         --header "Accept: application/vnd.github.v3+json" \
         --user "${GITHUB_TOKEN_USER}:${GITHUB_TOKEN}" \
         --url "https://api.github.com/repos/${RENDER_REPOSITORY}/deployments")"
-    DEPLOYMENT_ID="$(jq -nre 'env.DEPLOYMENT_JSON | fromjson[0].id')"
-    log "DEPLOYMENT_ID: '${DEPLOYMENT_ID}'"
+    RENDER_DEPLOYMENT_ID="$(jq -nre 'env.RENDER_DEPLOYMENT_JSON | fromjson[0].id')"
+    log "RENDER_DEPLOYMENT_ID: '${RENDER_DEPLOYMENT_ID}'"
 done
 
 # Deployment finished
 # Verify website is reachable
-http_status() {
+preview_http_status() {
     curl \
         --max-time "${CURL_TIMEOUT}" \
         --request HEAD \
@@ -347,28 +414,35 @@ http_status() {
         --head \
         --header 'Cache-Control: no-store' \
         --header 'Pragma: no-cache' \
-        --url "$1" \
+        --url "${PREVIEW_URL}" \
         --output /dev/null \
         --write-out '%{http_code}'
 }
-HTTP_STATUS_CODE="$(http_status)"
-export HTTP_STATUS_CODE
-log "HTTP_STATUS_CODE: '${HTTP_STATUS_CODE}'"
+PREVIEW_HTTP_STATUS_CODE="$(preview_http_status)"
+export PREVIEW_HTTP_STATUS_CODE
+log "PREVIEW_HTTP_STATUS_CODE: '${PREVIEW_HTTP_STATUS_CODE}'"
 
 TIMEOUT_DATE="$(( $(date +%s) + TIMEOUT_SEC ))"
 
-while [ "${HTTP_STATUS_CODE}" -ne "200" ]; do
+while [ "${PREVIEW_HTTP_STATUS_CODE}" -eq "404" ]; do
     if [ "$(date +%s)" -gt "${TIMEOUT_DATE}" ]; then
-        echo "Timeout exceeded while waiting for job to finish running"
-        set_output "run_timeout"
+        echo "Timeout exceeded while waiting for the preview website to return something other than a 404"
+        set_output "DISPATCH_RESULT" "http_status_timeout"
         exit 0
     fi
     sleep "${INTERVAL_SEC}"
 
-    HTTP_STATUS_CODE="$(http_status)"
-    log "HTTP_STATUS_CODE: '${HTTP_STATUS_CODE}'"
+    PREVIEW_HTTP_STATUS_CODE="$(preview_http_status)"
+    log "PREVIEW_HTTP_STATUS_CODE: '${PREVIEW_HTTP_STATUS_CODE}'"
 done
 
+# Verify it's a 200 HTTP status code
+if [ "${PREVIEW_HTTP_STATUS_CODE}" -ne "200" ]; then
+    echo "The preview website '${PREVIEW_URL}' is returning a status code of '${PREVIEW_HTTP_STATUS_CODE}'"
+    set_output "DISPATCH_RESULT" "http_status_failure"
+    exit 0
+fi
+
 # Everything succeeded
-set_output "all_success"
+set_output "DISPATCH_RESULT" "all_success"
 exit 0

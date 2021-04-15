@@ -14,14 +14,16 @@ set -eu
 # - DISPATCH_RESULT
 # The result of the dispatch step
 # This is set as an output by ./dispatch.sh
+
+# - DISPATCH_LOG_URL
+# The same style link as for RENDER_LOG_URL, except for the dispatch GitHub
+# Actions run itself (this run)
 #
-# - RUN_DETAILS_URL
+# - RENDER_LOG_URL
 # The human-usable, HTML URL to the information about the build run triggered
 # by the dispatch run
+# May not be set if the build never started
 #
-# - DISPATCH_DETAILS_URL
-# The same style link as for RUN_DETAILS_URL, except for the dispatch GitHub
-# Actions run itself (this run)
 #
 # Additionally, these can be overridden by setting them in the calling
 # environment
@@ -37,10 +39,6 @@ export PREVIEW_URL
 # workflow
 RENDER_REPOSITORY="mawillcockson/pr.texasbutterfliesmonitoring.org"
 export RENDER_REPOSITORY
-# The name of the file that describes the renderer part of the workflow, in the
-# RENDER_REPOSITORY
-WORKFLOW_FILE="${WORKFLOW_FILE:-"pull_request.yaml"}"
-export WORKFLOW_FILE
 # The api.github.com endpoint that can receive post requests for the pull
 # request that triggered the dispatch workflow
 # This can be found in the context "github.event.pull_request.issue_url".
@@ -89,7 +87,22 @@ For the reviewer, please perform a more rigorous review if this pull request mod
 case "${DISPATCH_RESULT}" in
     "dispatch_timeout")
         COMMENT_BODY="$(printf \
-'')"
+'The request to build a preview has been submitted.
+
+The request did not complete in time.
+
+[The logs for the dispatch of the request are available here.](%s)
+
+[The preview may become available here.](%s)
+
+%s' "${DISPATCH_LOG_URL}" "${PREVIEW_URL}" "${STANDARD_POSTSCRIPT}")"
+        ;;
+
+    "dispatch_error")
+        COMMENT_BODY="$(printf \
+'The request to build a preview encountered an error.
+
+[The logs for the dispatch of the request are available here.](%s)' "${DISPATCH_LOG_URL}")"
         ;;
 
     "queue_timeout")
@@ -98,22 +111,22 @@ case "${DISPATCH_RESULT}" in
 
 GitHub Actions may be busy.
 
-[The status of the GitHub Actions run is available here.](%s)
+[The status of the preview build process is available here.](%s)
 
 [The preview may become available here.](%s)
 
-%s' "${RUN_DETAILS_URL}" "${PREVIEW_URL}" "${STANDARD_POSTSCRIPT}")"
+%s' "${RENDER_LOG_URL}" "${PREVIEW_URL}" "${STANDARD_POSTSCRIPT}")"
         ;;
 
     "run_timeout")
         COMMENT_BODY="$(printf \
 'The preview is taking an unusually long time to build.
 
-[The status of the GitHub Actions run is available here.](%s)
+[The status of the preview build process is available here.](%s)
 
 [The preview may become available here.](%s)
 
-%s' "${RUN_DETAILS_URL}" "${PREVIEW_URL}" "${STANDARD_POSTSCRIPT}")"
+%s' "${RENDER_LOG_URL}" "${PREVIEW_URL}" "${STANDARD_POSTSCRIPT}")"
         ;;
 
     "run_error")
@@ -122,27 +135,62 @@ GitHub Actions may be busy.
 
 GitHub Actions may have experienced an error.
 
-[Logs are available here.](%s)
+[Logs for the preview build process are available here.](%s)
 
-If this was caused by a transient error, close the pull request. Then open the pull request. This will cause another preview to be built.' "${RUN_DETAILS_URL}")"
+If this was caused by a transient error, close the pull request. Then open the pull request. This will cause another preview to be built.' "${RENDER_LOG_URL}")"
         ;;
 
     "run_failed")
         COMMENT_BODY="$(printf \
-'There was an error building the website.
+'There was an error building the preview.
 
-[logs are available here](%s)' "${RUN_DETAILS_URL}")"
+[Logs for the preview build process are available here](%s)' "${RENDER_LOG_URL}")"
+        ;;
+
+    "commit_timeout")
+        COMMENT_BODY="$(printf \
+'The preview appears to have been built, but it has not been pushed to the preview website repository.
+
+The preview website repository is [the `gh-pages` branch of https://github.com/%s](https://github.com/%s/tree/gh-pages/)
+
+[Logs for the preview build process responsible for pushing these changes are available here.](%s)
+
+[The preview may become available here.](%s)
+
+%s' "${RENDER_REPOSITORY}" "${RENDER_REPOSITORY}" "${RENDER_LOG_URL}" "${PREVIEW_URL}" "${STANDARD_POSTSCRIPT}")"
         ;;
 
     "deploy_timeout")
         COMMENT_BODY="$(printf \
-'GitHub pages is taking unusually long to display the preview.
+'The preview appears to have been successfully built.
 
-[The status of the deployment is available here.](%s)
+GitHub Pages is taking unusually long to display the preview.
 
-[The preview may be available here.](%s)
+[The preview may become available here.](%s)
 
-%s' "${DEPLOYMENT_URL}" "${PREVIEW_URL}" "${STANDARD_POSTSCRIPT}")"
+%s' "${PREVIEW_URL}" "${STANDARD_POSTSCRIPT}")"
+        ;;
+
+    "http_status_timeout")
+        COMMENT_BODY="$(printf \
+'The preview appears to have been successfully built.
+
+The preview website is taking an unusually long time to display the preview.
+
+[The preview may become available here.](%s)
+
+%s' "${PREVIEW_URL}" "${STANDARD_POSTSCRIPT}")"
+        ;;
+
+    "http_status_failure")
+        COMMENT_BODY="$(printf \
+'The preview appears to have been successfully built.
+
+The preview website does not appear to be properly displaying the preview.
+
+[The preview may become available here.](%s)
+
+%s' "${PREVIEW_URL}" "${STANDARD_POSTSCRIPT}")"
         ;;
 
     "all_success")
@@ -162,7 +210,7 @@ If this was caused by a transient error, close the pull request. Then open the p
 
 [build workflow logs](%s)
 
-[deployment status](%s)' "${DISPATCH_DETAILS_URL}" "${RUN_DETAILS_URL}" "${DEPLOYMENT_URL}")"
+[deployment status](%s)' "${DISPATCH_LOG_URL}" "${RENDER_LOG_URL}" "${DEPLOYMENT_URL}")"
         ;;
 esac
 
