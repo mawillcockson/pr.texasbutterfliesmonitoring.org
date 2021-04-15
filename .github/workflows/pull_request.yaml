@@ -38,9 +38,11 @@ jobs:
     if: "${{ github.event_name == 'pull_request_target' }}"
     steps:
       - name: Run script to trigger GitHub Action workflow in other repository
+        id: dispatch
         shell: bash
         env:
           PULL_REQUEST_ID: "${{ github.event.pull_request.number }}"
+          PREVIEW_URL: "https://pr.texasbutterfliesmonitoring.org/${{ github.event.pull_request.number }}"
           GITHUB_EVENT: "${{ github.event }}"
           GITHUB_REF: "${{ env.GITHUB_REF }}"
           RENDER_REPOSITORY_TOKEN_USER: "${{ secrets.PULL_REQUEST_USER }}"
@@ -51,6 +53,7 @@ jobs:
       - name: Make Comment
         shell: bash
         env:
+          DISPATCH_RESULT: "${{ steps.dispatch.outputs.result }}"
           PREVIEW_URL: "https://pr.texasbutterfliesmonitoring.org/${{ github.event.pull_request.number }}"
           RENDER_REPOSITORY: "${{ github.repository_owner }}/pr.texasbutterfliesmonitoring.org"
           GITHUB_TOKEN: "${{ github.token }}"

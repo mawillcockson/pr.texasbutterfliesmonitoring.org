@@ -17,6 +17,9 @@ set -eu
 # The pull request number to request a preview of
 PULL_REQUEST_ID="${PULL_REQUEST_ID:-"1"}"
 export PULL_REQUEST_ID
+# The URL used to confirm the preview is reachable
+PREVIEW_URL="${PREVIEW_URL:-"https://pr.texasbutterfliesmonitoring.org/${PULL_REQUEST_ID}"}"
+export PREVIEW_URL
 # The full payload of the github event
 # Pull Request payload example:
 # https://docs.github.com/en/developers/webhooks-and-events/webhook-events-and-payloads#pull_request
@@ -41,25 +44,305 @@ RENDER_REPOSITORY="${RENDER_REPOSITORY:-"mawillcockson/pr.texasbutterfliesmonito
 export RENDER_REPOSITORY
 
 
-TEMP_FILE="$(mktemp)"
-export TEMP_FILE
+if [ -z "${CI+"unset"}" ]; then
+    for VAR in "RENDER_REPOSITORY_TOKEN" "RENDER_REPOSITORY_TOKEN_USER"; do
+        CURRENT_VAL="$(printenv "${VAR}" || printf '')"
+        if [ -z "${CURRENT_VAL}" ]; then
+            printf "%s: " "${var}"
+            read "${var}"
+            export "${var}"
+        fi
+    done
+fi
 
-printf '%s' "${GITHUB_EVENT}" \
-| jq --compact-output '{
+log() {
+    echo "$@"
+}
+
+# Collect initial state, for comparisons later
+PRIOR_RUN_JSON="$(curl \
+    --request GET \
+    --header "Accept: application/vnd.github.v3+json" \
+    --user "${GITHUB_TOKEN_USER}:${GITHUB_TOKEN}" \
+    --url "https://api.github.com/repos/${RENDER_REPOSITORY}/actions/runs" \
+    --data-urlencode "per_page=1")"
+export PRIOR_RUN_JSON
+PRIOR_RUN_ID="$(jq -nre 'env.PRIOR_RUN_JSON | fromjson.workflow_runs[0].id')"
+export PRIOR_RUN_ID
+log "PRIOR_RUN_ID: '${PRIOR_RUN_ID}'"
+
+PRIOR_COMMIT_JSON="$(curl \
+    --request GET \
+    --header "Accept: application/vnd.github.v3+json" \
+    --user "${RENDER_REPOSITORY_TOKEN_USER}:${RENDER_REPOSITORY_TOKEN}" \
+    --get \
+    --url "https://api.github.com/repos/${RENDER_REPOSITORY}/commits" \
+    --data-urlencode "sha=gh-pages" \
+    --data-urlencode "per_page=1")"
+export PRIOR_COMMIT_JSON
+PRIOR_COMMIT_SHA="$(jq -nre 'env.PRIOR_COMMIT_JSON | fromjson[0].sha')"
+export PRIOR_COMMIT_SHA
+log "PRIOR_COMMIT_SHA: '${PRIOR_COMMIT_SHA}'"
+
+PRIOR_DEPLOYMENT_JSON="$(curl \
+    --request GET \
+    --get \
+    --header "Accept: application/vnd.github.v3+json" \
+    --user "${GITHUB_TOKEN_USER}:${GITHUB_TOKEN}" \
+    --url "https://api.github.com/repos/${RENDER_REPOSITORY}/deployments")" \
+    --data-urlencode "per_page=1"
+export PRIOR_DEPLOYMENT_JSON
+PRIOR_DEPLOYMENT_ID="$(jq -nre 'env.PRIOR_DEPLOYMENT_JSON | fromjson[0].id')"
+export PRIOR_DEPLOYMENT_ID
+log "PRIOR_DEPLOYMENT_ID: '${PRIOR_DEPLOYMENT_ID}'"
+
+
+# Dispatch preview build job
+DISPATCH_PAYLOAD="$(jq --null-input --compact-output '{
     "ref": (env.GITHUB_REF),
     "inputs": {
-        "pull_request_id": (.pull_request.number),
-        "pull_request_event": (. | @json)
+        "pull_request_id": (env.GITHUB_EVENT | fromjson.pull_request.number),
+        "pull_request_event": env.GITHUB_EVENT
     }
-}' \
-> "${TEMP_FILE}"
+}')"
+export DISPATCH_PAYLOAD
+log "DISPATCH_PAYLOAD: '${DISPATCH_PAYLOAD}'"
 
 curl \
     --request POST \
     --header "Accept: application/vnd.github.v3+json" \
     --user "${RENDER_REPOSITORY_TOKEN_USER}:${RENDER_REPOSITORY_TOKEN}" \
     --post301 --post302 --post303 \
-    --data "@${TEMP_FILE}" \
+    --data "${DISPATCH_PAYLOAD}" \
     --url "https://api.github.com/repos/${RENDER_REPOSITORY}/actions/workflows/pull_request.yaml/dispatches"
 
-rm "${TEMP_FILE}"
+
+set_output() {
+    # See:
+    # https://docs.github.com/en/actions/reference/workflow-commands-for-github-actions#setting-an-output-parameter
+    printf '::set-output name=result::%s\n' "$1"
+    export DISPATCH_RESULT="$1"
+}
+
+# List the most recent GitHub Actions run for the render repository
+MOST_RECENT_RUN="$(curl \
+    --request GET \
+    --header "Accept: application/vnd.github.v3+json" \
+    --user "${GITHUB_TOKEN_USER}:${GITHUB_TOKEN}" \
+    --url "https://api.github.com/repos/${RENDER_REPOSITORY}/actions/runs" \
+    --data-urlencode "per_page=1")"
+export MOST_RECENT_RUN
+MOST_RECENT_RUN_ID="$(jq -nre 'env.MOST_RECENT_RUN | fromjson.workflow_runs[0].id')"
+export MOST_RECENT_RUN_ID
+log "MOST_RECENT_RUN_ID: '${MOST_RECENT_RUN_ID}'"
+
+
+TIMEOUT_DATE="$(( $(date +%s) + TIMEOUT_SEC ))"
+export TIMEOUT_DATE
+
+while [ "${PRIOR_RUN_ID}" = "${MOST_RECENT_RUN_ID}" ]; do
+    if [ "$(date +%s)" -gt "${TIMEOUT_DATE}" ]; then
+        echo "Timeout exceeded while waiting for dispatch to add a job to the queue"
+        set_output "dispatch_timeout"
+        exit 0
+    fi
+    sleep "${INTERVAL_SEC}"
+
+    MOST_RECENT_RUN="$(curl \
+        --request GET \
+        --header "Accept: application/vnd.github.v3+json" \
+        --user "${GITHUB_TOKEN_USER}:${GITHUB_TOKEN}" \
+        --url "https://api.github.com/repos/${RENDER_REPOSITORY}/actions/runs" \
+        --data-urlencode "per_page=1")"
+    MOST_RECENT_RUN_ID="$(jq -nre 'env.MOST_RECENT_RUN | fromjson.workflow_runs[0].id')"
+done
+
+log "MOST_RECENT_RUN: '${MOST_RECENT_RUN}'"
+
+if ! jq -nre 'env.MOST_RECENT_RUN | fromjson.workflow_runs[0].event == "workflow_dispatch"'; then
+    echo "Most recent workflow run is not a workflow_dispatch"
+    set_output "dispatch_error"
+    exit 0
+fi
+
+RUN_URL="$(jq -nre 'env.MOST_RECENT_RUN | fromjson.workflow_runs[0].url')"
+export RUN_URL
+log "RUN_URL: '${RUN_URL}'"
+
+run_json() {
+    curl \
+        --request GET \
+        --header "Accept: application/vnd.github.v3+json" \
+        --user "${GITHUB_TOKEN_USER}:${GITHUB_TOKEN}" \
+        --url "${RUN_URL}"
+}
+
+# Wait while the job run is queued
+RUN_JSON="$(run_json)"
+export RUN_JSON
+RUN_STATUS="$(jq -nre 'env.RUN_JSON | fromjson.status')"
+export RUN_STATUS
+log "RUN_STATUS: '${RUN_STATUS}'"
+
+TIMEOUT_DATE="$(( $(date +%s) + TIMEOUT_SEC ))"
+
+while [ "${RUN_STATUS}" = "queued" ]; do
+    if [ "$(date +%s)" -gt "${TIMEOUT_DATE}" ]; then
+        echo "Timeout exceeded while waiting for job to run"
+        set_output "queue_timeout"
+        exit 0
+    fi
+    sleep "${INTERVAL_SEC}"
+
+    RUN_JSON="$(run_json)"
+    RUN_STATUS="$(jq -nre 'env.RUN_JSON | fromjson.status')"
+    log "RUN_STATUS: '${RUN_STATUS}'"
+done
+
+# Wait while the job run is running
+TIMEOUT_DATE="$(( $(date +%s) + TIMEOUT_SEC ))"
+
+while [ "${RUN_STATUS}" = "in_progress" ]; do
+    if [ "$(date +%s)" -gt "${TIMEOUT_DATE}" ]; then
+        echo "Timeout exceeded while waiting for job to finish running"
+        set_output "run_timeout"
+        exit 0
+    fi
+    sleep "${INTERVAL_SEC}"
+
+    RUN_JSON="$(run_json)"
+    RUN_STATUS="$(jq -nre 'env.RUN_JSON | fromjson.status')"
+    log "RUN_STATUS: '${RUN_STATUS}'"
+done
+
+# GitHub Actions workflow has been run, check status and conclustion
+RUN_JSON="$(run_json)"
+CHECK_SUITE_ID="$(jq -nre 'env.RUN_JSON | fromjson.check_suite_id')"
+export CHECK_SUITE_ID
+CHECK_RUNS_URL="$(printf 'https://api.github.com/repos/%s/check-suites/%s/check-runs' "${RENDER_REPOSITORY}" "${CHECK_SUITE_ID}")"
+export CHECK_RUNS_URL
+log "CHECK_RUNS_URL: '${CHECK_RUNS_URL}'"
+CHECK_RUNS_JSON="$(curl \
+    --request GET \
+    --header "Accept: application/vnd.github.v3+json" \
+    --user "${GITHUB_TOKEN_USER}:${GITHUB_TOKEN}" \
+    --url "${CHECK_RUNS_URL}")"
+export CHECK_RUNS_JSON
+RUN_DETAILS_URL="$(jq -nre 'env.CHECK_RUNS_JSON | fromjson.check_runs | map(select(.name | test("^build"; "i"))) | first.html_url')"
+export RUN_DETAILS_URL
+log "RUN_DETAILS_URL: '${RUN_DETAILS_URL}'"
+
+if [ "$(jq -nre 'env.RUN_JSON | fromjson.status')" != "completed" ]; then
+    set_output "run_error"
+    exit 0
+elif [ "$(jq -nre 'env.RUN_JSON | fromjson.conclusion')" != "success" ]; then
+    set_output "run_failed"
+    exit 0
+fi
+
+# GitHub Actions Run completed, and was successful
+# Now check that a commit was made to the gh-pages branch of the
+# RENDER_REPOSITORY
+COMMIT_JSON="$(curl \
+    --request GET \
+    --header "Accept: application/vnd.github.v3+json" \
+    --user "${RENDER_REPOSITORY_TOKEN_USER}:${RENDER_REPOSITORY_TOKEN}" \
+    --get \
+    --url "https://api.github.com/repos/${RENDER_REPOSITORY}/commits" \
+    --data-urlencode "sha=gh-pages" \
+    --data-urlencode "per_page=1")"
+export COMMIT_JSON
+COMMIT_SHA="$(jq -nre 'env.COMMIT_JSON | fromjson[0].sha')"
+export COMMIT_SHA
+log "COMMIT_SHA: '${COMMIT_SHA}'"
+
+TIMEOUT_DATE="$(( $(date +%s) + TIMEOUT_SEC ))"
+
+while [ "${PRIOR_COMMIT_SHA}" = "${COMMIT_SHA}" ]; do
+    if [ "$(date +%s)" -gt "${TIMEOUT_DATE}" ]; then
+        echo "Timeout exceeded while waiting for job to finish running"
+        set_output "run_timeout"
+        exit 0
+    fi
+    sleep "${INTERVAL_SEC}"
+
+    COMMIT_JSON="$(curl \
+        --request GET \
+        --header "Accept: application/vnd.github.v3+json" \
+        --user "${RENDER_REPOSITORY_TOKEN_USER}:${RENDER_REPOSITORY_TOKEN}" \
+        --get \
+        --url "https://api.github.com/repos/${RENDER_REPOSITORY}/commits" \
+        --data-urlencode "sha=gh-pages" \
+        --data-urlencode "per_page=1")"
+    COMMIT_SHA="$(jq -nre 'env.COMMIT_JSON | fromjson[0].sha')"
+    log "COMMIT_SHA: '${COMMIT_SHA}'"
+done
+
+# A commit was made to the gh-pages branch
+# Now check deployment
+DEPLOYMENT_JSON="$(curl \
+    --request GET \
+    --header "Accept: application/vnd.github.v3+json" \
+    --user "${GITHUB_TOKEN_USER}:${GITHUB_TOKEN}" \
+    --url "https://api.github.com/repos/${RENDER_REPOSITORY}/deployments")"
+export DEPLOYMENT_JSON
+DEPLOYMENT_ID="$(jq -nre 'env.DEPLOYMENT_JSON | fromjson[0].id')"
+export DEPLOYMENT_ID
+log "DEPLOYMENT_ID: '${DEPLOYMENT_ID}'"
+
+TIMEOUT_DATE="$(( $(date +%s) + TIMEOUT_SEC ))"
+
+while [ "${PRIOR_DEPLOYMENT_ID}" = "${DEPLOYMENT_ID}" ]; do
+    if [ "$(date +%s)" -gt "${TIMEOUT_DATE}" ]; then
+        echo "Timeout exceeded while waiting for job to finish running"
+        set_output "run_timeout"
+        exit 0
+    fi
+    sleep "${INTERVAL_SEC}"
+
+    DEPLOYMENT_JSON="$(curl \
+        --request GET \
+        --header "Accept: application/vnd.github.v3+json" \
+        --user "${GITHUB_TOKEN_USER}:${GITHUB_TOKEN}" \
+        --url "https://api.github.com/repos/${RENDER_REPOSITORY}/deployments")"
+    DEPLOYMENT_ID="$(jq -nre 'env.DEPLOYMENT_JSON | fromjson[0].id')"
+    log "DEPLOYMENT_ID: '${DEPLOYMENT_ID}'"
+done
+
+# Deployment finished
+# Verify website is reachable
+http_status() {
+    curl \
+        --request HEAD \
+        --fail \
+        --silent \
+        --show-error \
+        --location \
+        --head \
+        --header 'Cache-Control: no-store' \
+        --header 'Pragma: no-cache' \
+        --url "$1" \
+        --output /dev/null \
+        --write-out '%{http_code}'
+}
+HTTP_STATUS_CODE="$(http_status)"
+export HTTP_STATUS_CODE
+log "HTTP_STATUS_CODE: '${HTTP_STATUS_CODE}'"
+
+TIMEOUT_DATE="$(( $(date +%s) + TIMEOUT_SEC ))"
+
+while [ "${HTTP_STATUS_CODE}" -ne "200" ]; do
+    if [ "$(date +%s)" -gt "${TIMEOUT_DATE}" ]; then
+        echo "Timeout exceeded while waiting for job to finish running"
+        set_output "run_timeout"
+        exit 0
+    fi
+    sleep "${INTERVAL_SEC}"
+
+    HTTP_STATUS_CODE="$(http_status)"
+    log "HTTP_STATUS_CODE: '${HTTP_STATUS_CODE}'"
+done
+
+# Everything succeeded
+set_output "all_success"
+exit 0
