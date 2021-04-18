@@ -31,6 +31,9 @@ on:
           https://docs.github.com/en/developers/webhooks-and-events/webhook-events-and-payloads#webhook-payload-example-32
         required: false
 
+env:
+  RENDER_REPOSITORY: "${{ github.repository_owner }}/pr.texasbutterfliesmonitoring.org"
+
 jobs:
   dispatch:
     name: Dispatch to other repository
@@ -48,8 +51,7 @@ jobs:
           GITHUB_REF: "${{ env.GITHUB_REF }}"
           RENDER_REPOSITORY_TOKEN_USER: "${{ secrets.PULL_REQUEST_USER }}"
           RENDER_REPOSITORY_TOKEN: "${{ secrets.PULL_REQUEST_TOKEN }}"
-          RENDER_REPOSITORY: "${{ github.repository_owner }}/pr.texasbutterfliesmonitoring.org"
-        run: curl -fsSL "https://github.com/${RENDER_REPOSITORY}/raw/main/dispatch.sh" | sh
+        run: curl -fsSL "https://github.com/${{ env.RENDER_REPOSITORY }}/raw/main/dispatch.sh" | sh
 
       - name: Make Comment
         shell: bash
@@ -58,10 +60,9 @@ jobs:
           DISPATCH_LOG_URL: "${{ steps.dispatch.outputs.DISPATCH_LOG_URL }}"
           RENDER_LOG_URL: "${{ steps.dispatch.outputs.RENDER_LOG_URL }}"
           PREVIEW_URL: "https://pr.texasbutterfliesmonitoring.org/${{ github.event.pull_request.number }}"
-          RENDER_REPOSITORY: "${{ github.repository_owner }}/pr.texasbutterfliesmonitoring.org"
           GITHUB_TOKEN: "${{ github.token }}"
           PULL_REQUEST_COMMENTS_URL: "${{ github.event.pull_request.issue_url }}"
-        run: curl -fsSL "https://github.com/${RENDER_REPOSITORY}/raw/main/comment.sh" | sh
+        run: curl -fsSL "https://github.com/${{ env.RENDER_REPOSITORY }}/raw/main/comment.sh" | sh
 
   render:
     name: Build pull request site with Hugo
